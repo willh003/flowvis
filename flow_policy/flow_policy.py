@@ -3,7 +3,7 @@ from scipy.special import logsumexp
 from scipy.stats import norm
 from typing import List
 
-from pydrake.all import Trajectory
+from pydrake.all import PiecewisePolynomial, Trajectory
 
 
 class FlowPolicy:
@@ -147,3 +147,21 @@ class FlowPolicy:
 
         us = self.u_conditional(t)  # (*BS, K)
         return np.sum(us * posterior, axis=-1)  # (*BS,)
+
+    def ode_integrate(self, x: float, num_steps: int = 1000) -> Trajectory:
+        """
+        Args:
+            x (float): Initial state.
+            num_steps (int): Number of steps to integrate.
+            
+        Returns:
+            Trajectory: Trajectory starting from x.
+        """
+        breaks = np.linspace(0.0, 1.0, num_steps + 1)  # (N+1,)
+        Δt = 1.0 / num_steps
+        samples = [x]
+        for t in breaks[:-1]:
+            u = self.u_marginal(x, t)
+            x = x + Δt * u
+            samples.append(x)
+        return PiecewisePolynomial.FirstOrderHold(breaks, [samples])
