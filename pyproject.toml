@@ -1,0 +1,31 @@
+[project]
+name = "flow-policy"
+version = "0.1.0"
+description = ""
+authors = [{name = "Siddharth Ancha", email = "sancha@mit.edu"}]
+dependencies = [
+    # =========================================================================
+    # Debugging, interactive Python and Jupyter notebooks
+    # =========================================================================
+    "ipdb",
+    "ipykernel",
+    "ipywidgets",
+    "pyreadline3",
+    "tqdm",
+    "jupyterlab",
+
+    # =========================================================================
+    # Main dependencies
+    # =========================================================================
+    "numpy<2.0.0",
+    "torch",
+    "matplotlib",
+    "termcolor",
+]
+requires-python = "<3.12,>=3.9"
+readme = "README.md"
+license = {text = "MIT"}
+
+[build-system]
+requires = ["pdm-backend"]
+build-backend = "pdm.backend"
