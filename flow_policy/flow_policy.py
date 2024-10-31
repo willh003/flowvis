@@ -44,7 +44,7 @@ class FlowPolicy:
         return μs
 
 
-    def log_pdf(self, x: np.ndarray, t: np.ndarray) -> float:
+    def log_pdf_marginal(self, x: np.ndarray, t: np.ndarray) -> float:
         """Compute log probability of the marginal flow at state x and time t
         
         Args:
@@ -68,15 +68,18 @@ class FlowPolicy:
         log_probs = logsumexp(log_probs, axis=-1)  # (*BS,)
         return log_probs
 
-    def pdf(self, x: np.ndarray, t: np.ndarray) -> float:
-        """Compute probability of the marginal flow at state x and time t
+    def pdf_conditional(self, x: np.ndarray, t: np.ndarray) -> float:
+        """
+        Compute probability of the conditional flow at state x and time t, for
+        each of the K trajectories.
         
         Args:
             x (np.ndarray, dtype=float, shape=(*BS,)): State values.
             t (np.ndarray, dtype=float, shape=(*BS,)): Time values in [0,1].
             
         Returns:
-            Probabilities, shape=(*BS,)
+            (np.ndarray, dtype=float, shape=(*BS, K)): densities under each of
+                the K conditional flows.
         """
         μs = self.μs(t)  # List[(*BS)]
 
@@ -88,6 +91,20 @@ class FlowPolicy:
     
         probs = np.array(probs)  # (K, *BS)
         probs = np.moveaxis(probs, 0, -1)  # (*BS, K)
+        return probs
+
+    def pdf_marginal(self, x: np.ndarray, t: np.ndarray) -> float:
+        """
+        Compute probability of the marginal flow at state x and time t
+        
+        Args:
+            x (np.ndarray, dtype=float, shape=(*BS,)): State values.
+            t (np.ndarray, dtype=float, shape=(*BS,)): Time values in [0,1].
+            
+        Returns:
+            Probabilities, shape=(*BS,)
+        """
+        probs = self.pdf_conditional(x, t)  # (*BS, K)
         probs = probs * self.π  # (*BS, K)
         probs = np.sum(probs, axis=-1)  # (*BS,)
         return probs
