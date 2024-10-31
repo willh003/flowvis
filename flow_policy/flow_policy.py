@@ -109,15 +109,41 @@ class FlowPolicy:
         probs = np.sum(probs, axis=-1)  # (*BS,)
         return probs
 
-    def u(self, x: np.ndarray, t: np.ndarray) -> np.ndarray:
+    def u_conditional(self, t: np.ndarray) -> np.ndarray:
         """
+        Compute the conditional velocity field for each of the K trajectories.
         Args:
-            x: State values, shape=(*BS,)
-            t: Time value in [0,1]
+            t (np.ndarray, dtype=float, shape=(*BS,)): Time values in [0,1].
             
         Returns:
-            Tensor: Action values, shape=(*BS, action_dim)
+            (np.ndarray, dtype=float, shape=(*BS, K)): Velocities for each of the
+                K conditional flows.
         """
-        # Implement the action policy based on the state x and time t
-        # This is a placeholder and should be replaced with the actual policy implementation
-        return torch.zeros(x.shape[0], self.action_dim)
+        shape = t.shape
+        t = t.ravel()  # (N,)
+        us = []
+        for traj in self.trajectories:
+            traj_derivative = traj.MakeDerivative()
+            u = traj_derivative.vector_values(t).reshape(shape)  # (*BS)
+            us.append(u)
+
+        us = np.array(us)  # (K, *BS)
+        us = np.moveaxis(us, 0, -1)  # (*BS, K)
+        return us
+
+    def u_marginal(self, x: np.ndarray, t: np.ndarray) -> np.ndarray:
+        """
+        Args:
+            x (np.ndarray, dtype=float, shape=(*BS,)): State values.
+            t (np.ndarray, dtype=float, shape=(*BS,)): Time values in [0,1].
+            
+        Returns:
+            (np.ndarray, dtype=float, shape=(*BS,)): Marginal velocities.
+        """
+        likelihood = self.pdf_conditional(x, t)  # (*BS, K)
+        posterior = self.π * likelihood  # (*BS, K)
+        normalizing_constant = np.sum(posterior, axis=-1, keepdims=True)  # (*BS, 1)
+        posterior = posterior / normalizing_constant  # (*BS, K)
+
+        us = self.u_conditional(t)  # (*BS, K)
+        return np.sum(us * posterior, axis=-1)  # (*BS,)
