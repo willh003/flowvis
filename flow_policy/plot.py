@@ -1,11 +1,20 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from typing import List
 
-def plot_probability_density(fp, ts, xs, ax):
+from flow_policy.flow_policy import FlowPolicy
+
+def plot_probability_density(
+        fp: FlowPolicy,
+        ts: np.ndarray,
+        xs: np.ndarray,
+        ax: plt.Axes,
+        alpha: float=1,
+    ):
     p = fp.pdf_marginal(xs, ts)  # (T, X)
-    return ax.imshow(p, origin='lower', extent=[-1, 1, 0, 1], aspect='auto', alpha=1)
+    return ax.imshow(p, origin='lower', extent=[-1, 1, 0, 1], aspect='auto', alpha=alpha)
 
-def plot_probability_density_and_vector_field(fp, ax, num_points=200, num_quiver=20):
+def plot_probability_density_and_vector_field(fp: FlowPolicy, ax: plt.Axes, num_points=200, num_quiver=20):
     """
     Example of how to call the function:
 
@@ -43,7 +52,7 @@ def plot_probability_density_and_vector_field(fp, ax, num_points=200, num_quiver
 
     return heatmap
 
-def plot_probability_density_and_streamlines(fp, ax, num_points=400):
+def plot_probability_density_and_streamlines(fp: FlowPolicy, ax: plt.Axes, num_points: int=400):
     """
     Example of how to call the function:
 
@@ -74,18 +83,25 @@ def plot_probability_density_and_streamlines(fp, ax, num_points=400):
 
     return heatmap
 
-def plot_probability_density_with_trajectories(fp, ax, num_trajectories=5):
+def plot_probability_density_with_trajectories(
+        fp: FlowPolicy,
+        ax: plt.Axes,
+        xs_start: List[float | None],
+        linewidth: float=1,
+        alpha: float=0.5,
+        heatmap_alpha: float=1,
+    ):
     ts = np.linspace(0, 1, 200)  # (T,)
     xs = np.linspace(-1, 1, 200)  # (X,)
     ts, xs = np.meshgrid(ts, xs, indexing='ij')  # (T, X)
-    heatmap = plot_probability_density(fp, ts, xs, ax)
+    heatmap = plot_probability_density(fp, ts, xs, ax, alpha=heatmap_alpha)
 
-    for _ in range(num_trajectories):
-        x_start = np.random.randn() * fp.σ
+    for x_start in xs_start:
+        x_start = x_start if x_start is not None else np.random.randn() * fp.σ
         traj = fp.ode_integrate(x_start)
         ts = np.linspace(0, 1, 200)
         xs = traj.vector_values(ts)
-        ax.plot(xs[0], ts, color='red', linewidth=1, alpha=0.5)
+        ax.plot(xs[0], ts, color='red', linewidth=linewidth, alpha=alpha)
 
     ax.tick_params(axis='both', which='both', length=0, labelbottom=False, labelleft=False)
     ax.set_xlim(-1, 1)
