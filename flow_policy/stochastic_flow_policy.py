@@ -282,4 +282,5 @@ class StochasticFlowPolicy:
             u = self.u_marginal(x, t)
             x = x + Δt * u
             samples.append(x)
-        return PiecewisePolynomial.FirstOrderHold(breaks, [samples])
+        samples = np.vstack(samples)  # (N+1, 2)
+        return PiecewisePolynomial.FirstOrderHold(breaks, samples.T)
