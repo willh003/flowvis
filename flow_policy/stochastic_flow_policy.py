@@ -63,9 +63,9 @@ class StochasticFlowPolicy:
             A (np.ndarray, dtype=float, shape=(2, 2)): Transition matrix.
             b (np.ndarray, dtype=float, shape=(2,)): Bias vector.
         """
-        σt = self.σ(t)  # (1,)
-        σ0 = self.σ0  # (1,)
-        σ1 = self.σ1  # (1,)
+        σt = self.σ(t)  # (,)
+        σ0 = self.σ0  # (,)
+        σ1 = self.σ1  # (,)
         q̃0 = traj.value(0).item()
         q̃t = traj.value(t).item()
 
@@ -259,7 +259,7 @@ class StochasticFlowPolicy:
         velocities = np.vstack([self.u_conditional(traj, x, t) for traj in self.trajectories])  # (K, 2)
 
         posterior = self.π * likelihoods
-        normalizing_constant = np.sum(posterior)  # (1,)
+        normalizing_constant = np.sum(posterior)  # (,)
         posterior = posterior / normalizing_constant  # (K,)
         posterior = posterior.reshape(-1, 1)  # (K, 1)
 
