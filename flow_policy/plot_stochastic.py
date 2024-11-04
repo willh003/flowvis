@@ -59,10 +59,11 @@ def plot_probability_density_with_trajectories_q(
         linewidth: float=1,
         alpha: float=0.5,
         heatmap_alpha: float=1,
-        num_points: int=200,
+        num_points_x: int=200,
+        num_points_t: int=200,
     ):
-    ts = np.linspace(0, 1, num_points)  # (T,)
-    xs = np.linspace(-1, 1, num_points)  # (X,)
+    ts = np.linspace(0, 1, num_points_t)  # (T,)
+    xs = np.linspace(-1, 1, num_points_x)  # (X,)
     heatmap = plot_probability_density_q(fp, ts, xs, ax, alpha=heatmap_alpha)
 
     for q_start, ε_start in zip(q_starts, ε_starts):
@@ -90,10 +91,11 @@ def plot_probability_density_with_trajectories_ε(
         linewidth: float=1,
         alpha: float=0.5,
         heatmap_alpha: float=1,
-        num_points: int=200,
+        num_points_x: int=200,
+        num_points_t: int=200,
     ):
-    ts = np.linspace(0, 1, num_points)  # (T,)
-    xs = np.linspace(-1, 1, num_points)  # (X,)
+    ts = np.linspace(0, 1, num_points_t)  # (T,)
+    xs = np.linspace(-1, 1, num_points_x)  # (X,)
     heatmap = plot_probability_density_ε(fp, ts, xs, ax, alpha=heatmap_alpha)
 
     for q_start, ε_start in zip(q_starts, ε_starts):
