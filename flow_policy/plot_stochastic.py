@@ -56,6 +56,7 @@ def plot_probability_density_with_trajectories_q(
         ax: plt.Axes,
         q_starts: List[float | None],
         ε_starts: List[float],
+        colors: List[str],
         linewidth: float=1,
         alpha: float=0.5,
         heatmap_alpha: float=1,
@@ -66,12 +67,12 @@ def plot_probability_density_with_trajectories_q(
     xs = np.linspace(-1, 1, num_points_x)  # (X,)
     heatmap = plot_probability_density_q(fp, ts, xs, ax, alpha=heatmap_alpha)
 
-    for q_start, ε_start in zip(q_starts, ε_starts):
+    for q_start, ε_start, color in zip(q_starts, ε_starts, colors):
         q_start = q_start if q_start is not None else np.random.randn() * fp.σ0
         traj = fp.ode_integrate(np.array([q_start, ε_start]))
         xs = traj.vector_values(ts)  # (2, N+1)
         qs = xs[0]  # (N+1,)
-        ax.plot(qs, ts, color='red', linewidth=linewidth, alpha=alpha)
+        ax.plot(qs, ts, color=color, linewidth=linewidth, alpha=alpha)
 
     ax.tick_params(axis='both', which='both', length=0, labelbottom=False, labelleft=False)
     ax.set_xlim(-1, 1)
@@ -88,6 +89,7 @@ def plot_probability_density_with_trajectories_ε(
         ax: plt.Axes,
         q_starts: List[float | None],
         ε_starts: List[float],
+        colors: List[str],
         linewidth: float=1,
         alpha: float=0.5,
         heatmap_alpha: float=1,
@@ -98,12 +100,12 @@ def plot_probability_density_with_trajectories_ε(
     xs = np.linspace(-1, 1, num_points_x)  # (X,)
     heatmap = plot_probability_density_ε(fp, ts, xs, ax, alpha=heatmap_alpha)
 
-    for q_start, ε_start in zip(q_starts, ε_starts):
+    for q_start, ε_start, color in zip(q_starts, ε_starts, colors):
         q_start = q_start if q_start is not None else np.random.randn() * fp.σ0
         traj = fp.ode_integrate(np.array([q_start, ε_start]))
         xs = traj.vector_values(ts)  # (2, N+1)
         εs = xs[1]  # (N+1,)
-        ax.plot(εs, ts, color='red', linewidth=linewidth, alpha=alpha)
+        ax.plot(εs, ts, color=color, linewidth=linewidth, alpha=alpha)
 
     ax.tick_params(axis='both', which='both', length=0, labelbottom=False, labelleft=False)
     ax.set_xlim(-1, 1)
