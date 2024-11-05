@@ -62,6 +62,7 @@ def plot_probability_density_with_trajectories_q(
         heatmap_alpha: float=1,
         num_points_x: int=200,
         num_points_t: int=200,
+        ode_steps: int=1000,
     ):
     ts = np.linspace(0, 1, num_points_t)  # (T,)
     xs = np.linspace(-1, 1, num_points_x)  # (X,)
@@ -69,7 +70,7 @@ def plot_probability_density_with_trajectories_q(
 
     for q_start, ε_start, color in zip(q_starts, ε_starts, colors):
         q_start = q_start if q_start is not None else np.random.randn() * fp.σ0
-        traj = fp.ode_integrate(np.array([q_start, ε_start]))
+        traj = fp.ode_integrate(np.array([q_start, ε_start]), num_steps=ode_steps)
         xs = traj.vector_values(ts)  # (2, N+1)
         qs = xs[0]  # (N+1,)
         ax.plot(qs, ts, color=color, linewidth=linewidth, alpha=alpha)
@@ -95,6 +96,7 @@ def plot_probability_density_with_trajectories_ε(
         heatmap_alpha: float=1,
         num_points_x: int=200,
         num_points_t: int=200,
+        ode_steps: int=1000,
     ):
     ts = np.linspace(0, 1, num_points_t)  # (T,)
     xs = np.linspace(-1, 1, num_points_x)  # (X,)
@@ -102,7 +104,7 @@ def plot_probability_density_with_trajectories_ε(
 
     for q_start, ε_start, color in zip(q_starts, ε_starts, colors):
         q_start = q_start if q_start is not None else np.random.randn() * fp.σ0
-        traj = fp.ode_integrate(np.array([q_start, ε_start]))
+        traj = fp.ode_integrate(np.array([q_start, ε_start]), num_steps=ode_steps)
         xs = traj.vector_values(ts)  # (2, N+1)
         εs = xs[1]  # (N+1,)
         ax.plot(εs, ts, color=color, linewidth=linewidth, alpha=alpha)
