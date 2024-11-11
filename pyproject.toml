@@ -17,10 +17,23 @@ dependencies = [
     # =========================================================================
     # Main dependencies
     # =========================================================================
+    "opencv-python",
     "drake",
     "matplotlib",
     "termcolor",
     "scipy",
+    "scikit-image",
+    "scikit-video",
+    "torch",
+    "torchvision",
+    "diffusers",
+    "zarr",
+    "numcodecs",
+    "pygame",
+    "pymunk",
+    "gdown",
+    "gym",
+    "shapely",
 ]
 requires-python = "<3.12,>=3.9"
 readme = "README.md"
