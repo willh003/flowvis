@@ -6,7 +6,6 @@ __pycache__/
 # Diffusion Policy
 *.ckpt
 *.zarr.zip
-*.mp4
 
 # C extensions
 *.so
