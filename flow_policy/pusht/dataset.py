@@ -1,8 +1,7 @@
 import numpy as np
-import torch
 import zarr
 
-from .dp_state_notebook import (
+from .dp_state_notebook.dataset import (
     create_sample_indices, get_data_stats, normalize_data, PushTStateDataset,
 )
 
