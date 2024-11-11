@@ -5,7 +5,7 @@
 groups = ["default"]
 strategy = ["inherit_metadata"]
 lock_version = "4.5.0"
-content_hash = "sha256:a2747ce16e7b3784bfd3fb6b08ec76a1b1810cd56c36c58a3f95cd1f9607a23b"
+content_hash = "sha256:eaf4c9b611eb47bdf5ebd5538c597343c78c1841ab0cbebc1a7b07fdd58b6967"
 
 [[metadata.targets]]
 requires_python = ">=3.9,<3.12"
@@ -1355,6 +1355,23 @@ dependencies = [
 files = [
     {file = "matplotlib_inline-0.1.7-py3-none-any.whl", hash = "sha256:df192d39a4ff8f21b1895d72e6a13f5fcc5099f00fa84384e0ea28c2cc0653ca"},
     {file = "matplotlib_inline-0.1.7.tar.gz", hash = "sha256:8423b23ec666be3d16e16b60bdd8ac4e86e840ebd1dd11a30b9f117f2fa0ab90"},
+]
+
+[[package]]
+name = "mediapy"
+version = "1.2.2"
+requires_python = ">=3.8"
+summary = "Read/write/show images and videos in an IPython notebook"
+groups = ["default"]
+dependencies = [
+    "Pillow",
+    "ipython",
+    "matplotlib",
+    "numpy",
+]
+files = [
+    {file = "mediapy-1.2.2-py3-none-any.whl", hash = "sha256:2b159c385120c6eca9c88ccf96a19fb2b5b5937c788cf430db637d27270618ba"},
+    {file = "mediapy-1.2.2.tar.gz", hash = "sha256:42d9a1aa93c183550b824dbb4f0de5da61aa5c84db8f01f063acd1f23b90ef0a"},
 ]
 
 [[package]]
