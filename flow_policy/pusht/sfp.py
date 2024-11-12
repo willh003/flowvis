@@ -14,9 +14,9 @@ class StreamingFlowPolicyPositionOnly (Policy):
     def __init__(self,
                  velocity_net: nn.Module,
                  action_dim: int,
-                 pred_horizon: int,
-                 sigma: float,
-                 device: torch.device,
+                 pred_horizon: Optional[int] = None,
+                 sigma: Optional[float] = None,
+                 device: torch.device = 'cuda',
         ):
         """
         Args:
@@ -26,11 +26,18 @@ class StreamingFlowPolicyPositionOnly (Policy):
             sigma (float): standard deviation of the Gaussian noise
             device (torch.device): device
         """
+        super().__init__()
         self.velocity_net = velocity_net
         self.action_dim = action_dim
-        self.pred_horizon = pred_horizon
-        self.sigma = sigma
         self.device = device
+
+        # Register pred_horizon and sigma as buffers if provided
+        if pred_horizon is not None:
+            self.register_buffer('pred_horizon', torch.tensor(pred_horizon, dtype=torch.int32))
+            self.pred_horizon: Tensor
+        if sigma is not None:
+            self.register_buffer('sigma', torch.tensor(sigma, dtype=torch.float32))
+            self.sigma: Tensor
 
     def TransformTrainingDatum(self, datum: Dict[str, np.ndarray]) -> Dict[str, np.ndarray]:
         """
@@ -49,7 +56,7 @@ class StreamingFlowPolicyPositionOnly (Policy):
         obs, action = datum['obs'], datum['action']
         OBS_HORIZON, OBS_DIM = obs.shape
         PRED_HORIZON, ACTION_DIM = action.shape
-        assert PRED_HORIZON == self.pred_horizon
+        assert PRED_HORIZON == self.pred_horizon.item()
         assert OBS_HORIZON == 2  # logic currently only works for history of length 2
 
         # Create a trajectory from the action sequence.
@@ -74,7 +81,7 @@ class StreamingFlowPolicyPositionOnly (Policy):
         u = traj.EvalDerivative(time).T  # (1, ACTION_DIM)
 
         # Add noise to position
-        x = x + self.sigma * np.random.randn(*x.shape)  # (1, ACTION_DIM)
+        x = x + self.sigma.item() * np.random.randn(*x.shape)  # (1, ACTION_DIM)
         x = x.astype(np.float32)  # (1, ACTION_DIM)
 
         return {

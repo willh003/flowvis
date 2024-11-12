@@ -127,9 +127,9 @@ with tqdm(range(num_epochs), desc='Epoch') as tglobal:
 
 # Weights of the EMA model
 # is used for inference
-ema_velocity_net = velocity_net
+ema_velocity_net = policy.velocity_net
 ema.copy_to(ema_velocity_net.parameters())
 
 # Save model
-torch.save(ema_velocity_net.state_dict(), save_path)
+torch.save(policy.state_dict(), save_path)
 print(f"Saved model to {save_path}.")
