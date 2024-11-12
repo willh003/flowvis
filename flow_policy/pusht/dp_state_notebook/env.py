@@ -228,6 +228,8 @@ class PushTEnv(gym.Env):
     reward_range = (0., 1.)
 
     def __init__(self,
+            k_p = 100,
+            k_v = 20,
             legacy=False,
             block_cog=None, damping=None,
             render_action=True,
@@ -240,7 +242,7 @@ class PushTEnv(gym.Env):
         self.render_size = render_size
         self.sim_hz = 100
         # Local controller params.
-        self.k_p, self.k_v = 100, 20    # PD control.z
+        self.k_p, self.k_v = k_p, k_v    # PD control.z
         self.control_hz = self.metadata['video.frames_per_second']
         # legcay set_state for data compatiblity
         self.legacy = legacy
