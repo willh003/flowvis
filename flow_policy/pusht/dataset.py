@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Dict, Optional, Callable
 import numpy as np
 import zarr
 
@@ -8,6 +8,10 @@ class PushTStateDatasetWithNextObsAsAction (PushTStateDataset):
     """
     A dataset of where gripper observations act as actions.
     """
+    def __init__(self, *args, transform_datum_fn: Optional[Callable] = None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.transform_datum_fn = transform_datum_fn
+
     def LoadTrainData(self, dataset_root: zarr.Group) -> Dict[str, np.ndarray]:
         """
         Overloads superclass method to set actions as the observations of the
@@ -46,3 +50,9 @@ class PushTStateDatasetWithNextObsAsAction (PushTStateDataset):
             'action': actions,  # (N, ACTION_DIM)
             'obs': obs  # (N, OBS_DIM)
         }
+
+    def __getitem__(self, *args, **kwargs):
+        datum = super().__getitem__(*args, **kwargs)
+        if self.transform_datum_fn is not None:
+            datum = self.transform_datum_fn(datum)
+        return datum

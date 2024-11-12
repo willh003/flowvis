@@ -1,0 +1,137 @@
+"""
+All functions in this file have been copied from the Diffusion Policy repo, in
+particular, this notebook (diffusion_policy_state_pusht_demo.ipynb):
+https://colab.research.google.com/drive/1gxdkgRVfM55zihY9TFLja97cSVZOZq2B
+"""
+# diffusion policy import
+from typing import Dict
+import numpy as np
+from functools import partial
+import torch
+from torch import Tensor
+import torch.nn as nn
+from diffusers.training_utils import EMAModel
+from diffusers.optimization import get_scheduler
+from tqdm.auto import tqdm
+
+from flow_policy.pusht.dataset import PushTStateDatasetWithNextObsAsAction
+from flow_policy.pusht.dp_state_notebook.network import ConditionalUnet1D
+from flow_policy.pusht.sfp import StreamingFlowPolicyPositionOnly
+
+
+"""
+|o|o|                             observations: 2
+| |a|a|a|a|a|a|a|a|               actions executed: 8
+|p|p|p|p|p|p|p|p|p|p|p|p|p|p|p|p| actions predicted: 16
+"""
+
+# =============================================================================
+# Parameters
+# =============================================================================
+
+pred_horizon = 16
+obs_horizon = 2
+action_horizon = 8
+obs_dim = 5
+action_dim = 2
+sigma = 0.1
+num_epochs = 100
+save_path = f"models/pusht_sfp_obs_{num_epochs}ep.pth"
+
+# =============================================================================
+
+# create dataset from file
+dataset = PushTStateDatasetWithNextObsAsAction(
+    pred_horizon=16,
+    obs_horizon=2,
+    action_horizon=8,
+    transform_datum_fn=partial(
+        StreamingFlowPolicyPositionOnly.TransformTrainingDatum,
+        sigma=sigma,
+    )
+)
+# save training data statistics (min, max) for each dim
+stats = dataset.stats
+
+# create dataloader
+dataloader = torch.utils.data.DataLoader(
+    dataset,
+    batch_size=256,
+    num_workers=1,
+    shuffle=True,
+    # accelerate cpu-gpu transfer
+    pin_memory=True,
+    # don't kill worker process afte each epoch
+    persistent_workers=True
+)
+
+# create network object
+velocity_net = ConditionalUnet1D(
+    input_dim=action_dim,
+    global_cond_dim=obs_dim*obs_horizon
+)
+
+# device transfer
+device = torch.device('cuda')
+_ = velocity_net.to(device)
+
+policy = StreamingFlowPolicyPositionOnly(
+    velocity_net=velocity_net,
+    action_dim=action_dim,
+    device=device
+)
+
+# Exponential Moving Average
+# accelerates training and improves stability
+# holds a copy of the model weights
+ema = EMAModel(parameters=velocity_net.parameters(), power=0.75)
+
+# Standard ADAM optimizer
+# Note that EMA parametesr are not optimized
+optimizer = torch.optim.AdamW(
+    params=velocity_net.parameters(),
+    lr=1e-4, weight_decay=1e-6)
+
+# Cosine LR schedule with linear warmup
+lr_scheduler = get_scheduler(
+    name='cosine',
+    optimizer=optimizer,
+    num_warmup_steps=500,
+    num_training_steps=len(dataloader) * num_epochs
+)
+
+with tqdm(range(num_epochs), desc='Epoch') as tglobal:
+    # epoch loop
+    for epoch_idx in tglobal:
+        epoch_loss = list()
+        # batch loop
+        with tqdm(dataloader, desc='Batch', leave=False) as tepoch:
+            for nbatch in tepoch:
+                # L2 loss
+                loss = policy.Loss(nbatch)
+
+                # optimize
+                loss.backward()
+                optimizer.step()
+                optimizer.zero_grad()
+                # step lr scheduler every batch
+                # this is different from standard pytorch behavior
+                lr_scheduler.step()
+
+                # update Exponential Moving Average of the model weights
+                ema.step(velocity_net.parameters())
+
+                # logging
+                loss_cpu = loss.item()
+                epoch_loss.append(loss_cpu)
+                tepoch.set_postfix(loss=loss_cpu)
+        tglobal.set_postfix(loss=np.mean(epoch_loss))
+
+# Weights of the EMA model
+# is used for inference
+ema_velocity_net = velocity_net
+ema.copy_to(ema_velocity_net.parameters())
+
+# Save model
+torch.save(ema_velocity_net.state_dict(), save_path)
+print(f"Saved model to {save_path}.")

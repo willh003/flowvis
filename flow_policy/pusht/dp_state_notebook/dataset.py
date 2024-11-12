@@ -237,7 +237,7 @@ class PushTStateDataset(torch.utils.data.Dataset):
             buffer_end_idx=buffer_end_idx,
             sample_start_idx=sample_start_idx,
             sample_end_idx=sample_end_idx
-        )
+        )  # each tensor is of shape (PRED_HORIZON, K)
 
         # discard unused observations
         nsample['obs'] = nsample['obs'][:self.obs_horizon,:]
