@@ -155,7 +155,7 @@ class StreamingFlowPolicyPositionOnly (Policy):
         t_span = torch.linspace(0, t_max, total_integration_steps)
         select_action_indices = np.arange(
             0,
-            total_integration_steps + 1,
+            total_integration_steps,
             integration_steps_per_action,
         )
 
