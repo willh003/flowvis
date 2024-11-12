@@ -82,9 +82,7 @@ _ = noise_pred_net.to(device)
 # Exponential Moving Average
 # accelerates training and improves stability
 # holds a copy of the model weights
-ema = EMAModel(
-    parameters=noise_pred_net.parameters(),
-    power=0.75)
+ema = EMAModel(parameters=noise_pred_net.parameters(), power=0.75)
 
 # Standard ADAM optimizer
 # Note that EMA parametesr are not optimized
