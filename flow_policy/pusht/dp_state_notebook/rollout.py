@@ -6,14 +6,13 @@ import collections
 from tqdm.auto import tqdm
 
 
-from flow_policy.pusht.dp_state_notebook.dataset import (
-    normalize_data, unnormalize_data,
+from flow_policy.pusht.dp_state_notebook.all import (
+    normalize_data, unnormalize_data, Policy, PushTEnv
 )
-from flow_policy.pusht.dp_state_notebook.env import PushTEnv
 
 def Rollout(
         env: PushTEnv,
-        policy,
+        policy: Policy,
         stats: Dict,
         max_steps: int = 200,
         obs_horizon: int = 2,
