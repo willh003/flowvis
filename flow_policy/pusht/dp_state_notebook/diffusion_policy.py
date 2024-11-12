@@ -8,13 +8,13 @@ from flow_policy.pusht.dp_state_notebook.base_policy import Policy
 
 class DiffusionPolicy (Policy):
     def __init__(self,
-                 ema_noise_pred_net: nn.Module,
+                 noise_pred_net: nn.Module,
                  num_diffusion_iters: int,
                  pred_horizon: int,
                  action_dim: int,
                  device: torch.device,
         ):
-        self.ema_noise_pred_net = ema_noise_pred_net
+        self.noise_pred_net = noise_pred_net
         self.pred_horizon = pred_horizon
         self.action_dim = action_dim
         self.device = device
@@ -44,7 +44,7 @@ class DiffusionPolicy (Policy):
 
         for k in self.noise_scheduler.timesteps:
             # predict noise
-            noise_pred = self.ema_noise_pred_net(
+            noise_pred = self.noise_pred_net(
                 sample=naction,
                 timestep=k,
                 global_cond=obs_cond
