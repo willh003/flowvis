@@ -5,8 +5,9 @@ https://colab.research.google.com/drive/1gxdkgRVfM55zihY9TFLja97cSVZOZq2B
 """
 import numpy as np
 import torch
+import gdown
+import os
 import zarr
-
 
 def create_sample_indices(
         episode_ends:np.ndarray, sequence_length:int,
@@ -78,8 +79,12 @@ def unnormalize_data(ndata, stats):
 
 # dataset
 class PushTStateDataset(torch.utils.data.Dataset):
-    def __init__(self, dataset_path,
-                 pred_horizon, obs_horizon, action_horizon):
+    def __init__(self, pred_horizon, obs_horizon, action_horizon):
+
+        dataset_path = "pusht_cchi_v7_replay.zarr.zip"
+        if not os.path.isfile(dataset_path):
+            id = "1KY1InLurpMvJDRb14L9NlXT_fEsCvVUq&confirm=t"
+            gdown.download(id=id, output=dataset_path, quiet=False)
 
         # read from zarr dataset
         dataset_root = zarr.open(dataset_path, 'r')
