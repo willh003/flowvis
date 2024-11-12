@@ -35,7 +35,8 @@ action_horizon = 8
 obs_dim = 5
 action_dim = 2
 sigma = 0.1
-num_epochs = 100
+num_epochs = 200
+batch_size = 1024
 save_path = f"models/pusht_sfp_obs_{num_epochs}ep.pth"
 
 # =============================================================================
@@ -70,7 +71,7 @@ dataset = PushTStateDatasetWithNextObsAsAction(
 # create dataloader
 dataloader = torch.utils.data.DataLoader(
     dataset,
-    batch_size=256,
+    batch_size=batch_size,
     num_workers=1,
     shuffle=True,
     # accelerate cpu-gpu transfer
