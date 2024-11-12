@@ -124,7 +124,10 @@ class StreamingFlowPolicyPositionOnly (Policy):
         return loss
 
     @torch.inference_mode()
-    def __call__(self, obs_cond: Tensor, pred_horizon: int, num_actions: Optional[int] = None) -> Tensor:
+    def __call__(self,
+                 obs_cond: Tensor,
+                 num_actions: Optional[int] = None,
+                 integration_steps_per_action: int = 6) -> Tensor:
         ode = NeuralODE(
             vector_field=VectorFieldWrapper(self.velocity_net, obs_cond),
             solver="dopri5",
@@ -135,15 +138,16 @@ class StreamingFlowPolicyPositionOnly (Policy):
 
         x0 = obs_cond[-1][:2]  # (2,)
 
-        # Integration time steps
-        integration_steps_per_action = 6
-        num_actions = num_actions or pred_horizon
-        tmax = pred_horizon / num_actions
-        total_integration_steps = 1 + num_actions * integration_steps_per_action
-        t_span = torch.linspace(0, tmax, total_integration_steps)
+        # Integration time steps.
+        num_actions = num_actions or self.pred_horizon.item()
+        assert 1 <= num_actions <= self.pred_horizon.item()
+        num_future_actions = num_actions - 1
+        t_max = num_future_actions / (self.pred_horizon.item() - 1)
+        total_integration_steps = 1 + num_future_actions * integration_steps_per_action
+        t_span = torch.linspace(0, t_max, total_integration_steps)
         select_action_indices = np.arange(
-            integration_steps_per_action,
-            total_integration_steps,
+            0,
+            total_integration_steps + 1,
             integration_steps_per_action,
         )
 
