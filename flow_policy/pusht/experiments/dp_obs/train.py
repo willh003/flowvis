@@ -12,7 +12,7 @@ from diffusers.training_utils import EMAModel
 from diffusers.optimization import get_scheduler
 from tqdm.auto import tqdm
 
-from flow_policy.pusht.dp_state_notebook.dataset import PushTStateDataset
+from flow_policy.pusht.dataset import PushTStateDatasetWithNextObsAsAction
 from flow_policy.pusht.dp_state_notebook.network import ConditionalUnet1D
 
 
@@ -33,12 +33,12 @@ obs_dim = 5
 action_dim = 2
 num_epochs = 100
 num_diffusion_iters = 100
-save_path = f"models/pusht_dp_actions_{num_epochs}ep.pth"
+save_path = f"models/pusht_dp_obs_{num_epochs}ep.pth"
 
 # =============================================================================
 
 # create dataset from file
-dataset = PushTStateDataset(
+dataset = PushTStateDatasetWithNextObsAsAction(
     pred_horizon=16,
     obs_horizon=2,
     action_horizon=8,
