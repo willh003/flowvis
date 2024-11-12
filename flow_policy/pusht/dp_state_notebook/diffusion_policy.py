@@ -31,7 +31,15 @@ class DiffusionPolicy (Policy):
             prediction_type='epsilon'
         )
 
-    def __call__(self, obs_cond: Tensor) -> Tensor:
+    def __call__(self, nobs: Tensor) -> Tensor:
+        """
+        Args:
+            nobs (Tensor, shape=(OBS_HORIZON, OBS_DIM)): normalized observations
+
+        Returns:
+            Tensor (shape=(1, NUM_ACTIONS, ACTION_DIM)): predicted actions
+        """
+        obs_cond = nobs.unsqueeze(0).flatten(start_dim=1)  # (1, OBS_HORIZON * OBS_DIM)
         B = obs_cond.shape[0]
 
         # initialize action from Gaussian noise

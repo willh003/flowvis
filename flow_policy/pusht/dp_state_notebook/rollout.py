@@ -1,4 +1,4 @@
-from typing import List, Tuple, Dict
+from typing import List, Tuple, Dict, Optional
 import numpy as np
 import torch
 from torch import Tensor
@@ -19,6 +19,7 @@ def Rollout(
         obs_horizon: int = 2,
         action_horizon: int = 8,
         device: str = 'cuda',
+        policy_kwargs: Optional[Dict] = None,
     ) -> Tuple[float, List[np.ndarray]]:
 
     # get first observation
@@ -33,6 +34,8 @@ def Rollout(
     done = False
     step_idx = 0
 
+    policy_kwargs = policy_kwargs or {}
+
     with tqdm(total=max_steps, desc="Eval PushTStateEnv") as pbar:
         while not done:
             B = 1
@@ -46,8 +49,7 @@ def Rollout(
             # infer action
             with torch.no_grad():
                 # reshape observation to (B,obs_horizon*obs_dim)
-                obs_cond = nobs.unsqueeze(0).flatten(start_dim=1)
-                naction: Tensor = policy(obs_cond)
+                naction: Tensor = policy(nobs, **policy_kwargs)
 
             # unnormalize action
             naction = naction.detach().to('cpu').numpy()

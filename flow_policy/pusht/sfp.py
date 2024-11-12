@@ -14,8 +14,8 @@ class StreamingFlowPolicyPositionOnly (Policy):
     def __init__(self,
                  velocity_net: nn.Module,
                  action_dim: int,
-                 pred_horizon: Optional[int] = None,
-                 sigma: Optional[float] = None,
+                 pred_horizon: int = 16,
+                 sigma: float = 0.0,
                  device: torch.device = 'cuda',
         ):
         """
@@ -32,12 +32,9 @@ class StreamingFlowPolicyPositionOnly (Policy):
         self.device = device
 
         # Register pred_horizon and sigma as buffers if provided
-        if pred_horizon is not None:
-            self.register_buffer('pred_horizon', torch.tensor(pred_horizon, dtype=torch.int32))
-            self.pred_horizon: Tensor
-        if sigma is not None:
-            self.register_buffer('sigma', torch.tensor(sigma, dtype=torch.float32))
-            self.sigma: Tensor
+        self.register_buffer('pred_horizon', torch.tensor(pred_horizon, dtype=torch.int32))
+        self.register_buffer('sigma', torch.tensor(sigma, dtype=torch.float32))
+        self.pred_horizon: Tensor; self.sigma: Tensor
 
     def TransformTrainingDatum(self, datum: Dict[str, np.ndarray]) -> Dict[str, np.ndarray]:
         """
@@ -125,10 +122,21 @@ class StreamingFlowPolicyPositionOnly (Policy):
 
     @torch.inference_mode()
     def __call__(self,
-                 obs_cond: Tensor,
+                 nobs: Tensor,
                  num_actions: Optional[int] = None,
-                 integration_steps_per_action: int = 6) -> Tensor:
-        ode = NeuralODE(
+                 integration_steps_per_action: int = 6,
+    ) -> Tensor:
+        """
+        Args:
+            nobs (Tensor, shape=(OBS_HORIZON, OBS_DIM)): normalized observations
+            num_actions (Optional[int]): number of actions to predict
+            integration_steps_per_action (int): number of integration steps per action
+
+        Returns:
+            Tensor (shape=(1, NUM_ACTIONS, ACTION_DIM)): predicted actions
+        """
+        obs_cond = nobs.unsqueeze(0).flatten(start_dim=1)  # (1, OBS_HORIZON * OBS_DIM)
+        ode_solver = NeuralODE(
             vector_field=VectorFieldWrapper(self.velocity_net, obs_cond),
             solver="dopri5",
             sensitivity="adjoint",
@@ -136,7 +144,7 @@ class StreamingFlowPolicyPositionOnly (Policy):
             rtol=1e-4,
         )
 
-        x0 = obs_cond[-1][:2]  # (2,)
+        x0 = nobs[-1, :2]  # (2,)
 
         # Integration time steps.
         num_actions = num_actions or self.pred_horizon.item()
@@ -151,9 +159,10 @@ class StreamingFlowPolicyPositionOnly (Policy):
             integration_steps_per_action,
         )
 
-        traj = ode.trajectory(x=x0, t_span=t_span)  # (total_integration_steps, 2)
+        traj = ode_solver.trajectory(x=x0, t_span=t_span)  # (K, 2)
 
         naction = traj[select_action_indices]  # (NUM_ACTIONS, 2)
+        naction = naction.unsqueeze(0)  # (1, NUM_ACTIONS, 2)
         return naction
 
 
@@ -165,8 +174,19 @@ class VectorFieldWrapper (nn.Module):
         self.obs_cond = obs_cond
 
     def forward(self, t: Tensor, x: Tensor, *args, **kwargs) -> Tensor:
-        return self.model(
+        """
+        Args:
+            t (Tensor, shape=(,), dtype=float): time
+            x (Tensor, shape=(ACTION_DIM,), dtype=float): position
+
+        Returns:
+            Tensor (shape=(ACTION_DIM,), dtype=float): velocity
+        """
+        x = x.unsqueeze(0).unsqueeze(0)  # (1, 1, ACTION_DIM)
+        v: Tensor = self.model(
             sample=x,
             timestep=t.repeat(x.shape[0]),
-            global_cond=self.obs_cond.flatten(start_dim=1)
-        )
+            global_cond=self.obs_cond,
+        )  # (1, 1, ACTION_DIM)
+        v = v.flatten()  # (ACTION_DIM,)
+        return v
