@@ -27,6 +27,7 @@ dependencies = [
     "scikit-video",
     "torch",
     "torchvision",
+    "torchdyn",
     "diffusers",
     "zarr",
     "numcodecs",
@@ -36,7 +37,7 @@ dependencies = [
     "gym",
     "shapely",
 ]
-requires-python = "<3.12,>=3.9"
+requires-python = "<3.12,>=3.10"
 readme = "README.md"
 license = {text = "MIT"}
 
