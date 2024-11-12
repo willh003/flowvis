@@ -35,7 +35,7 @@ action_horizon = 8
 obs_dim = 5
 action_dim = 2
 sigma = 0.1
-num_epochs = 200
+num_epochs = 1000
 batch_size = 1024
 save_path = f"models/pusht_sfp_obs_{num_epochs}ep.pth"
 
