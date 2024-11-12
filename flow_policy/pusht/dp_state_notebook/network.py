@@ -6,6 +6,7 @@ https://colab.research.google.com/drive/1gxdkgRVfM55zihY9TFLja97cSVZOZq2B
 from typing import Union
 import math
 import torch
+from torch import Tensor
 import torch.nn as nn
 
 
@@ -52,6 +53,30 @@ class Upsample1d(nn.Module):
 
     def forward(self, x):
         return self.conv(x)
+
+class Linear1d(nn.Module):
+    """
+    Author: Sunshine Jiang
+
+    This is a replacement for convolution/deconvolution when pred_horizon is 1.
+    """
+    def __init__(self, dim):
+        super().__init__()
+        self.linear = nn.Linear(dim, dim)
+
+    def forward(self, x: Tensor) -> Tensor:
+        """
+        Args:
+            x (Tensor, shape=(B, C, T)): input tensor.
+        Returns:
+            Tensor, shape=(B, C, T): output tensor
+        """
+        # Reshape input to (batch_size, -1) for fully connected layer
+        B, C, T = x.size()
+        x = x.view(B, -1)  # (B, C*T)
+        x = self.linear(x)  # (B, C*T)
+        x = x.view(B, C, T)  # (B, C, T)
+        return x
 
 class Conv1dBlock(nn.Module):
     '''
@@ -126,8 +151,9 @@ class ConditionalUnet1D(nn.Module):
         diffusion_step_embed_dim=256,
         down_dims=[256,512,1024],
         kernel_size=5,
-        n_groups=8
-        ):
+        n_groups=8,
+        use_linear_up_down_sampling=False,
+    ):
         """
         input_dim: Dim of actions.
         global_cond_dim: Dim of global conditioning applied with FiLM
@@ -137,6 +163,7 @@ class ConditionalUnet1D(nn.Module):
           The length of this array determines numebr of levels.
         kernel_size: Conv kernel size
         n_groups: Number of groups for GroupNorm
+        use_linear_up_down_sampling: Whether to use Linear1d for up and down sampling.
         """
 
         super().__init__()
@@ -166,6 +193,7 @@ class ConditionalUnet1D(nn.Module):
         ])
 
         down_modules = nn.ModuleList([])
+        Downsample = Linear1d if use_linear_up_down_sampling else Downsample1d
         for ind, (dim_in, dim_out) in enumerate(in_out):
             is_last = ind >= (len(in_out) - 1)
             down_modules.append(nn.ModuleList([
@@ -175,10 +203,11 @@ class ConditionalUnet1D(nn.Module):
                 ConditionalResidualBlock1D(
                     dim_out, dim_out, cond_dim=cond_dim,
                     kernel_size=kernel_size, n_groups=n_groups),
-                Downsample1d(dim_out) if not is_last else nn.Identity()
+                Downsample(dim_out) if not is_last else nn.Identity()
             ]))
 
         up_modules = nn.ModuleList([])
+        Upsample = Linear1d if use_linear_up_down_sampling else Upsample1d
         for ind, (dim_in, dim_out) in enumerate(reversed(in_out[1:])):
             is_last = ind >= (len(in_out) - 1)
             up_modules.append(nn.ModuleList([
@@ -188,7 +217,7 @@ class ConditionalUnet1D(nn.Module):
                 ConditionalResidualBlock1D(
                     dim_in, dim_in, cond_dim=cond_dim,
                     kernel_size=kernel_size, n_groups=n_groups),
-                Upsample1d(dim_in) if not is_last else nn.Identity()
+                Upsample(dim_in) if not is_last else nn.Identity()
             ]))
 
         final_conv = nn.Sequential(

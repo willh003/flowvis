@@ -68,7 +68,8 @@ dataloader = torch.utils.data.DataLoader(
 # create network object
 velocity_net = ConditionalUnet1D(
     input_dim=action_dim,
-    global_cond_dim=obs_dim*obs_horizon
+    global_cond_dim=obs_dim*obs_horizon,
+    use_linear_up_down_sampling=True,
 )
 
 # device transfer
