@@ -154,21 +154,13 @@ class PushTStateDataset(torch.utils.data.Dataset):
             action_horizon: int
         ):
 
-        # Load dataset from disk or Google Drive
-        dataset_path = "pusht_cchi_v7_replay.zarr.zip"
-        if not os.path.isfile(dataset_path):
-            id = "1KY1InLurpMvJDRb14L9NlXT_fEsCvVUq&confirm=t"
-            gdown.download(id=id, output=dataset_path, quiet=False)
-
         # read from zarr dataset
-        dataset_root = zarr.open(dataset_path, 'r')
+        dataset_root: zarr.Group = self.GetDatasetRoot()
 
-        # All demonstration episodes are concatinated in the first dimension N
-        train_data = {
-            'action': dataset_root['data']['action'][:],  # (N, ACTION_DIM)
-            'obs': dataset_root['data']['state'][:]  # (N, OBS_DIM)
-        }
-        # Marks one-past the last index for each episode
+        # All demonstration episodes are concatenated in the first dimension N.
+        train_data = self.LoadTrainData(dataset_root)
+
+        # Marks one-past the last index for each episode.
         episode_ends = dataset_root['meta']['episode_ends'][:]  # (E,)
 
         # compute start and end of each state-action sequence
@@ -201,6 +193,32 @@ class PushTStateDataset(torch.utils.data.Dataset):
         self.pred_horizon = pred_horizon
         self.action_horizon = action_horizon
         self.obs_horizon = obs_horizon
+
+    @staticmethod
+    def GetDatasetRoot() -> zarr.Group:
+        """Load dataset from disk or Google Drive"""
+        dataset_path = "pusht_cchi_v7_replay.zarr.zip"
+        if not os.path.isfile(dataset_path):
+            id = "1KY1InLurpMvJDRb14L9NlXT_fEsCvVUq&confirm=t"
+            gdown.download(id=id, output=dataset_path, quiet=False)
+        return zarr.open(dataset_path, 'r')
+
+    def LoadTrainData(self, dataset_root: zarr.Group) -> Dict[str, np.ndarray]:
+        """
+        Args:
+            dataset_root (zarr.Group): Root of the zarr dataset.
+
+        Returns:
+            Dict[str, np.ndarray]: A dictionary with keys 'action' and 'obs'.
+                Values are np.ndarrays of size (N, K) where N is the number of
+                timesteps in the dataset and K is the dimension of the data
+                (e.g. ACTION_DIM, OBS_DIM).
+        """
+        # All demonstration episodes are concatenated in the first dimension N
+        return {
+            'action': dataset_root['data']['action'][:],  # (N, ACTION_DIM)
+            'obs': dataset_root['data']['state'][:]  # (N, OBS_DIM)
+        }
 
     def __len__(self):
         # all possible segments of the dataset
