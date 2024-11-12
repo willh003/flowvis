@@ -43,8 +43,6 @@ dataset = PushTStateDatasetWithNextObsAsAction(
     obs_horizon=2,
     action_horizon=8,
 )
-# save training data statistics (min, max) for each dim
-stats = dataset.stats
 
 # create dataloader
 dataloader = torch.utils.data.DataLoader(

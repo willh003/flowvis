@@ -40,31 +40,6 @@ save_path = f"models/pusht_sfp_obs_{num_epochs}ep.pth"
 
 # =============================================================================
 
-# create dataset from file
-dataset = PushTStateDatasetWithNextObsAsAction(
-    pred_horizon=16,
-    obs_horizon=2,
-    action_horizon=8,
-    transform_datum_fn=partial(
-        StreamingFlowPolicyPositionOnly.TransformTrainingDatum,
-        sigma=sigma,
-    )
-)
-# save training data statistics (min, max) for each dim
-stats = dataset.stats
-
-# create dataloader
-dataloader = torch.utils.data.DataLoader(
-    dataset,
-    batch_size=256,
-    num_workers=1,
-    shuffle=True,
-    # accelerate cpu-gpu transfer
-    pin_memory=True,
-    # don't kill worker process afte each epoch
-    persistent_workers=True
-)
-
 # create network object
 velocity_net = ConditionalUnet1D(
     input_dim=action_dim,
@@ -79,7 +54,29 @@ _ = velocity_net.to(device)
 policy = StreamingFlowPolicyPositionOnly(
     velocity_net=velocity_net,
     action_dim=action_dim,
-    device=device
+    pred_horizon=pred_horizon,
+    sigma=sigma,
+    device=device,
+)
+
+# create dataset from file
+dataset = PushTStateDatasetWithNextObsAsAction(
+    pred_horizon=pred_horizon,
+    obs_horizon=obs_horizon,
+    action_horizon=action_horizon,
+    transform_datum_fn=policy.TransformTrainingDatum,
+)
+
+# create dataloader
+dataloader = torch.utils.data.DataLoader(
+    dataset,
+    batch_size=256,
+    num_workers=1,
+    shuffle=True,
+    # accelerate cpu-gpu transfer
+    pin_memory=True,
+    # don't kill worker process afte each epoch
+    persistent_workers=True
 )
 
 # Exponential Moving Average
