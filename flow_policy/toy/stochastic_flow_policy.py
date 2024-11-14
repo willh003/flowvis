@@ -15,8 +15,8 @@ class StochasticFlowPolicy:
         σ1: float,
     ):
         """
-        Flow policy is an extended configuration space (q(t), ε(t)) where q is
-        the original trajectory and ε is a noise variable that starts from
+        Flow policy is an extended configuration space (q(t), z(t)) where q is
+        the original trajectory and z is a noise variable that starts from
         N(0, 1).
 
         Let q̃(t) be the demonstration trajectory.
@@ -25,13 +25,13 @@ class StochasticFlowPolicy:
         Conditional flow:
         • At time t=0, we sample:
             • q₀ ~ N(q̃(0), σ₀)
-            • ε₀ ~ N(0, 1)
+            • z₀ ~ N(0, 1)
 
         • Flow trajectory at time t:
-            • q(t) = q₀ + (q̃(t) - q̃(0)) + (σₜ - σ₀) ε₀
-            • ε(t) = (1 - (1-σ₁)t)ε₀ + tq̃(t)
-              • ε starts from a pure noise sample ε₀ that drifts towards the
-              trajectory. Therefore, ε(t) is uncorrelated with q at t=0, but
+            • q(t) = q₀ + (q̃(t) - q̃(0)) + (σₜ - σ₀) z₀
+            • z(t) = (1 - (1-σ₁)t)z₀ + tq̃(t)
+              • z starts from a pure noise sample z₀ that drifts towards the
+              trajectory. Therefore, z(t) is uncorrelated with q at t=0, but
               eventually becomes very informative of the trajectory.
 
         Args:
@@ -129,8 +129,8 @@ class StochasticFlowPolicy:
             float: Probability of the conditional flow at state x and time t.
         """
         assert isinstance(q, float)
-        μ_qε, Σ_qε = self.μΣ(traj, t)
-        μ_q, Σ_q = μ_qε[0], Σ_qε[0, 0]
+        μ_qz, Σ_qz = self.μΣ(traj, t)
+        μ_q, Σ_q = μ_qz[0], Σ_qz[0, 0]
         dist = multivariate_normal(mean=μ_q, cov=Σ_q)
         return dist.pdf(q)
 
@@ -151,40 +151,40 @@ class StochasticFlowPolicy:
             prob += π * self.pdf_conditional_q(traj, q, t)
         return prob
 
-    def pdf_conditional_ε(self, traj: Trajectory, ε: float, t: float) -> float:
+    def pdf_conditional_z(self, traj: Trajectory, z: float, t: float) -> float:
         """
-        Compute probability of the conditional flow at ε and time t, for each
+        Compute probability of the conditional flow at z and time t, for each
         of the K trajectories.
         
         Args:
             traj (Trajectory): Demonstration trajectory.
-            ε (float): Epsilon value.
+            z (float): Latent variable value.
             t (float): Time value in [0,1].
             
         Returns:
-            float: Probability of the conditional flow at epsilon and time t.
+            float: Probability of the conditional flow at z and time t.
         """
-        assert isinstance(ε, float)
-        μ_qε, Σ_qε = self.μΣ(traj, t)
-        μ_ε, Σ_ε = μ_qε[1], Σ_qε[1, 1]
-        dist = multivariate_normal(mean=μ_ε, cov=Σ_ε)
-        return dist.pdf(ε)
+        assert isinstance(z, float)
+        μ_qz, Σ_qz = self.μΣ(traj, t)
+        μ_z, Σ_z = μ_qz[1], Σ_qz[1, 1]
+        dist = multivariate_normal(mean=μ_z, cov=Σ_z)
+        return dist.pdf(z)
 
-    def pdf_marginal_ε(self, ε: float, t: float) -> float:
+    def pdf_marginal_z(self, z: float, t: float) -> float:
         """
-        Compute probability of the marginal flow at epsilon and time t.
+        Compute probability of the marginal flow at z and time t.
         
         Args:
-            ε (float): Epsilon value.
+            z (float): Latent variable value.
             t (float): Time value in [0,1].
             
         Returns:
-            float: Probability of the marginal flow at epsilon and time t.
+            float: Probability of the marginal flow at z and time t.
         """
-        assert isinstance(ε, float)
+        assert isinstance(z, float)
         prob = 0
         for π, traj in zip(self.π, self.trajectories):
-            prob += π * self.pdf_conditional_ε(traj, ε, t)
+            prob += π * self.pdf_conditional_z(traj, z, t)
         return prob
 
 
@@ -209,16 +209,16 @@ class StochasticFlowPolicy:
         Compute the conditional velocity field for a given trajectory.
 
         • Flow trajectory at time t:
-            • q(t) = q₀ + (q̃(t) - q̃(0)) + (σₜ - σ₀) ε₀
-            • ε(t) = (1 - (1-σ₁)t)ε₀ + tq̃(t)
+            • q(t) = q₀ + (q̃(t) - q̃(0)) + (σₜ - σ₀) z₀
+            • z(t) = (1 - (1-σ₁)t)z₀ + tq̃(t)
 
         • Conditional velocity field:
-            • First, given q(t) and ε(t), we want to compute q₀ and ε₀.
-                • ε₀ = (ε(t) - tq̃(t)) / (1 - (1-σ₁)t)
-                • q₀ = q(t) - (q̃(t) - q̃(0)) - (σₜ - σ₀) ε₀
+            • First, given q(t) and z(t), we want to compute q₀ and z₀.
+                • z₀ = (z(t) - tq̃(t)) / (1 - (1-σ₁)t)
+                • q₀ = q(t) - (q̃(t) - q̃(0)) - (σₜ - σ₀) z₀
             • Then, we compute the velocity field for the conditional flow.
-                • uq(q, ε, t) = ṽ(t) + (σ₁ - σ₀) ε₀
-                • uε(q, ε, t) = q̃(t) + tṽ(t) - (1-σ₁)ε₀
+                • uq(q, z, t) = ṽ(t) + (σ₁ - σ₀) z₀
+                • uz(q, z, t) = q̃(t) + tṽ(t) - (1-σ₁)z₀
 
         Args:
             traj (Trajectory): Demonstration trajectory.
@@ -229,19 +229,19 @@ class StochasticFlowPolicy:
             (np.ndarray, dtype=float, shape=(2)): Velocities for each of the
                 K conditional flows.
         """
-        qt, εt = x
+        qt, zt = x
         q̃t = traj.value(t).item()
         σ0 = self.σ0
         σ1 = self.σ1
     
         ṽt = traj.EvalDerivative(t).item()
 
-        # Invert the flow and transform (qt, εt) to (q0, ε0)
-        ε0 = (εt - t * q̃t) / (1 - (1 - σ1) * t)
+        # Invert the flow and transform (qt, zt) to (q0, z0)
+        z0 = (zt - t * q̃t) / (1 - (1 - σ1) * t)
 
-        # Compute velocity of the trajectory starting from (q0, ε0) at t
-        uq = ṽt + (σ1 - σ0) * ε0
-        uv = q̃t + t * ṽt - (1 - σ1) * ε0
+        # Compute velocity of the trajectory starting from (q0, z0) at t
+        uq = ṽt + (σ1 - σ0) * z0
+        uv = q̃t + t * ṽt - (1 - σ1) * z0
 
         return np.array([uq, uv])
 

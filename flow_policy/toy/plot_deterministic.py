@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from typing import List
 
-from flow_policy.flow_policy import FlowPolicy
+from flow_policy.toy.flow_policy import FlowPolicy
 
 def plot_probability_density(
         fp: FlowPolicy,
