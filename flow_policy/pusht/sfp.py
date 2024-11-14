@@ -56,13 +56,6 @@ class StreamingFlowPolicyPositionOnly (Policy):
         assert PRED_HORIZON == self.pred_horizon.item()
         assert OBS_HORIZON == 2  # logic currently only works for history of length 2
 
-        # Create a trajectory from the action sequence.
-        traj_times = np.linspace(0, 1, PRED_HORIZON)  # (PRED_HORIZON,)
-        traj_positions = action  # (PRED_HORIZON, ACTION_DIM)
-        traj: PiecewisePolynomial = PiecewisePolynomial.FirstOrderHold(
-            traj_times, traj_positions.T,
-        )
-
         # Ensure that the first action matches the last observation
         # This may not happen when the sequence starts from the beginning of an
         # episode and both obs and action are duplicated. Then, hack this by
@@ -72,6 +65,13 @@ class StreamingFlowPolicyPositionOnly (Policy):
         if not np.all(action[0] == obs[-1, :2]):
             action = action.copy()
             action[0] = obs[-1, :2]
+
+        # Create a trajectory from the action sequence.
+        traj_times = np.linspace(0, 1, PRED_HORIZON)  # (PRED_HORIZON,)
+        traj_positions = action  # (PRED_HORIZON, ACTION_DIM)
+        traj: PiecewisePolynomial = PiecewisePolynomial.FirstOrderHold(
+            traj_times, traj_positions.T,
+        )
 
         time = np.float32(np.random.rand())  # (,)
         x = traj.value(time).T  # (1, ACTION_DIM)
