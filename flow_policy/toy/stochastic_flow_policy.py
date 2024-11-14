@@ -20,7 +20,7 @@ class StochasticFlowPolicy:
         N(0, 1).
 
         Let q̃(t) be the demonstration trajectory.
-        Define σₜ = (1-t)σ₀ + tσ₁.
+        Define constant σᵣ = √(σ₁² - σ₀²). Note that σ₁² = σ₀² + σᵣ².
 
         Conditional flow:
         • At time t=0, we sample:
@@ -28,7 +28,7 @@ class StochasticFlowPolicy:
             • z₀ ~ N(0, 1)
 
         • Flow trajectory at time t:
-            • q(t) = q₀ + (q̃(t) - q̃(0)) + (σₜ - σ₀) z₀
+            • q(t) = q₀ + (q̃(t) - q̃(0)) + (σᵣt) z₀
             • z(t) = (1 - (1-σ₁)t)z₀ + tq̃(t)
               • z starts from a pure noise sample z₀ that drifts towards the
               trajectory. Therefore, z(t) is uncorrelated with q at t=0, but
@@ -48,14 +48,8 @@ class StochasticFlowPolicy:
         self.σ0 = σ0
         self.σ1 = σ1
 
-
-    def σ(self, t: float) -> float:
-        """
-        Returns:
-            float: Standard deviation of the Gaussian tube at time t.
-        """
-        return (1-t) * self.σ0 + t * self.σ1
-
+        # Residual standard deviation: √(σ₁² - σ₀²)
+        self.σr = np.sqrt(np.square(σ1) - np.square(σ0))
 
     def Ab(self, traj: Trajectory, t: float) -> Tuple[np.ndarray, np.ndarray]:
         """
@@ -63,15 +57,14 @@ class StochasticFlowPolicy:
             A (np.ndarray, dtype=float, shape=(2, 2)): Transition matrix.
             b (np.ndarray, dtype=float, shape=(2,)): Bias vector.
         """
-        σt = self.σ(t)  # (,)
-        σ0 = self.σ0  # (,)
         σ1 = self.σ1  # (,)
+        σr = self.σr  # (,)
         q̃0 = traj.value(0).item()
         q̃t = traj.value(t).item()
 
         b = np.array([q̃t - q̃0, t * q̃t])
         A = np.array([
-            [1,          σt - σ0],
+            [1,           σr * t],
             [0, 1 - (1 - σ1) * t],
         ])
         return A, b
@@ -209,15 +202,15 @@ class StochasticFlowPolicy:
         Compute the conditional velocity field for a given trajectory.
 
         • Flow trajectory at time t:
-            • q(t) = q₀ + (q̃(t) - q̃(0)) + (σₜ - σ₀) z₀
+            • q(t) = q₀ + (q̃(t) - q̃(0)) + (σᵣt) z₀
             • z(t) = (1 - (1-σ₁)t)z₀ + tq̃(t)
 
         • Conditional velocity field:
             • First, given q(t) and z(t), we want to compute q₀ and z₀.
                 • z₀ = (z(t) - tq̃(t)) / (1 - (1-σ₁)t)
-                • q₀ = q(t) - (q̃(t) - q̃(0)) - (σₜ - σ₀) z₀
+                • q₀ = q(t) - (q̃(t) - q̃(0)) - (σᵣt) z₀
             • Then, we compute the velocity field for the conditional flow.
-                • uq(q, z, t) = ṽ(t) + (σ₁ - σ₀) z₀
+                • uq(q, z, t) = ṽ(t) + σᵣz₀
                 • uz(q, z, t) = q̃(t) + tṽ(t) - (1-σ₁)z₀
 
         Args:
@@ -231,8 +224,8 @@ class StochasticFlowPolicy:
         """
         qt, zt = x
         q̃t = traj.value(t).item()
-        σ0 = self.σ0
         σ1 = self.σ1
+        σr = self.σr
     
         ṽt = traj.EvalDerivative(t).item()
 
@@ -240,7 +233,7 @@ class StochasticFlowPolicy:
         z0 = (zt - t * q̃t) / (1 - (1 - σ1) * t)
 
         # Compute velocity of the trajectory starting from (q0, z0) at t
-        uq = ṽt + (σ1 - σ0) * z0
+        uq = ṽt + σr * z0
         uv = q̃t + t * ṽt - (1 - σ1) * z0
 
         return np.array([uq, uv])
