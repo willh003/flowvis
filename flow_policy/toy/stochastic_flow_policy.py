@@ -41,7 +41,7 @@ class StochasticFlowPolicy:
             σ0 (float): Standard deviation of the Gaussian tube at time t=0.
             σ1 (float): Standard deviation of the Gaussian tube at time t=1.
         """
-        assert σ1 >= σ0
+        assert 0 <= σ0 <= σ1, "σ0 must be less than or equal to σ1"
 
         self.trajectories = trajectories
         self.π = np.array(prior)  # (K,)
