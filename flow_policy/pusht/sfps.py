@@ -14,8 +14,8 @@ class StreamingFlowPolicyStochastic (Policy):
     def __init__(self,
                  velocity_net: nn.Module,
                  action_dim: int,
-                 σ0: float,
-                 σ1: float,
+                 σ0: float = 0.0,
+                 σ1: float = 0.0,
                  pred_horizon: int = 16,
                  device: torch.device = 'cuda',
         ):
