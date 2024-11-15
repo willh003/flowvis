@@ -18,18 +18,18 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Testing script for flow-policy model.")
-    parser.add_argument("--model_type", type=str, required=True, help="Model used for testing: sfpd or sfps")
-    parser.add_argument("--ckpt_path", type=str, required=True, help="Path to EMA checkpoint file")
-    parser.add_argument("--save_dir", type=str, default="./eval", help="Directory to save results")
+    parser.add_argument("--model-type", type=str, required=True, help="Model used for testing: sfpd or sfps")
+    parser.add_argument("--ckpt-path", type=str, required=True, help="Path to EMA checkpoint file")
+    parser.add_argument("--save-dir", type=str, default="./eval", help="Directory to save results")
     
-    parser.add_argument("--integration_steps_per_action", type=int, default=1, help="Integration time steps per action")
-    parser.add_argument("--num_tests", type=int, default=100, help="Number of tests to run")
+    parser.add_argument("--integration-steps-per-action", type=int, default=1, help="Integration time steps per action")
+    parser.add_argument("--num-tests", type=int, default=100, help="Number of tests to run")
     parser.add_argument("--name", type=str, default="newbatch", help="Name for this experiment")
-    parser.add_argument("--k_p", type=float, default=5, help="Position gain")
-    parser.add_argument("--k_v", type=float, default=1, help="Velocity gain")
+    parser.add_argument("--kp", type=float, default=5, help="Position gain")
+    parser.add_argument("--kv", type=float, default=1, help="Velocity gain")
     parser.add_argument("--seed", type=int, default=16, help="Random seed")
-    parser.add_argument("--env_start_seed", type=int, default=500, help="Start seed for environment")
-    parser.add_argument("--max_steps", type=int, default=200, help="Maximum steps in each test")
+    parser.add_argument("--env-start-seed", type=int, default=500, help="Start seed for environment")
+    parser.add_argument("--max-steps", type=int, default=200, help="Maximum steps in each test")
     return parser.parse_args()
 
 
@@ -43,10 +43,10 @@ def main():
     action_save_path = save_dir / f'{args.name}_action.pt'
 
     # Parameters
-    obs_dim = 5
-    action_dim = 2
     obs_horizon = 2
     action_horizon = 8
+    obs_dim = 5
+    action_dim = 2
 
     # Load policy weights
     if args.model_type == "sfpd":
@@ -62,7 +62,6 @@ def main():
         )
         state_dict = torch.load(args.ckpt_path, map_location='cuda')
         policy.load_state_dict(state_dict)
-        policy.cuda()
     elif args.model_type == "sfps":
         velocity_net = ConditionalUnet1D(
             input_dim=action_dim,
@@ -76,10 +75,11 @@ def main():
         )
         state_dict = torch.load(args.ckpt_path, map_location='cuda')
         policy.load_state_dict(state_dict)
-        policy.cuda()
     else:
         raise ValueError(f"Invalid model type {args.model_type}, only accept sfpd or sfps")
+
     print('Pretrained weights loaded.')
+    policy.cuda()
 
     # Create dataset for stats
     dataset = PushTStateDatasetWithNextObsAsAction(
@@ -115,7 +115,7 @@ def main():
     torch.manual_seed(args.seed)
 
     # Create environment
-    env = PushTEnv(k_p=args.k_p, k_v=args.k_v)
+    env = PushTEnv(k_p=args.kp, k_v=args.kv)
 
     for t_ix in range(args.num_tests):
         env_seed = args.env_start_seed + t_ix
