@@ -25,16 +25,40 @@ def parse_args():
     parser.add_argument("--integration-steps-per-action", type=int, default=1, help="Integration time steps per action")
     parser.add_argument("--num-tests", type=int, default=100, help="Number of tests to run")
     parser.add_argument("--name", type=str, default="newbatch", help="Name for this experiment")
-    parser.add_argument("--kp", type=float, default=5, help="Position gain")
-    parser.add_argument("--kv", type=float, default=1, help="Velocity gain")
+    parser.add_argument("--kp", type=float, default=500, help="Position gain")
+    parser.add_argument("--kv", type=float, default=20, help="Velocity gain")
     parser.add_argument("--seed", type=int, default=16, help="Random seed")
     parser.add_argument("--env-start-seed", type=int, default=500, help="Start seed for environment")
-    parser.add_argument("--max-steps", type=int, default=200, help="Maximum steps in each test")
+    parser.add_argument("--max-rollout-steps", type=int, default=200, help="Maximum steps in each test")
     return parser.parse_args()
+
+def pretty_print_args(args):
+    # Get the longest argument name for proper spacing
+    max_arg_length = max(len(arg) for arg in vars(args))
+    width = max(60, max_arg_length + 40)  # Ensure minimum width of 80 chars
+    name_width = max_arg_length + 2  # Width for argument names section
+
+    # Create box characters
+    top_line = "╔" + "═" * (width - 2) + "╗"
+    middle_line = "╠" + "═" * (width - 2) + "╣"
+    bottom_line = "╚" + "═" * (width - 2) + "╝"
+    middle = ":"
+    side = "║"
+
+    print("\n" + top_line)
+    title = " Running with arguments:"
+    print(f"{side}{title:<{width - 2}}{side}")
+    print(middle_line)
+
+    for arg, value in vars(args).items():
+        print(f"{side}{arg:>{name_width-1}} {middle} {value:<{width - name_width - 4}}{side}")
+
+    print(bottom_line + "\n")
 
 
 def main():
     args = parse_args()
+    pretty_print_args(args)
 
     # Derived parameters
     save_dir = Path(args.save_dir)
@@ -78,8 +102,8 @@ def main():
     else:
         raise ValueError(f"Invalid model type {args.model_type}, only accept sfpd or sfps")
 
-    print('Pretrained weights loaded.')
     policy.cuda()
+    print('Pretrained weights loaded.')
 
     # Create dataset for stats
     dataset = PushTStateDatasetWithNextObsAsAction(
@@ -127,7 +151,7 @@ def main():
             env=env,
             policy=policy,
             stats=dataset.stats,
-            max_steps=args.max_steps,
+            max_steps=args.max_rollout_steps,
             obs_horizon=obs_horizon,
             action_horizon=action_horizon,
             device='cuda',
