@@ -45,7 +45,7 @@ save_path = f"models/pusht_sfp_obs_{num_epochs}ep.pth"
 velocity_net = ConditionalUnet1D(
     input_dim=action_dim,
     global_cond_dim=obs_dim*obs_horizon,
-    use_linear_up_down_sampling=True,
+    fc_timesteps=1,
 )
 
 # device transfer

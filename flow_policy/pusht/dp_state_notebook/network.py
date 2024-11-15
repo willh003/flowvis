@@ -3,7 +3,7 @@ All functions in this file have been copied from the Diffusion Policy repo, in
 particular, this notebook (diffusion_policy_state_pusht_demo.ipynb):
 https://colab.research.google.com/drive/1gxdkgRVfM55zihY9TFLja97cSVZOZq2B
 """
-from typing import Union
+from typing import Optional, Union
 import math
 import torch
 from torch import Tensor
@@ -152,7 +152,7 @@ class ConditionalUnet1D(nn.Module):
         down_dims=[256,512,1024],
         kernel_size=5,
         n_groups=8,
-        use_linear_up_down_sampling=False,
+        fc_timesteps: Optional[int]=None,
     ):
         """
         input_dim: Dim of actions.
@@ -163,7 +163,10 @@ class ConditionalUnet1D(nn.Module):
           The length of this array determines numebr of levels.
         kernel_size: Conv kernel size
         n_groups: Number of groups for GroupNorm
-        use_linear_up_down_sampling: Whether to use Linear1d for up and down sampling.
+        fc_timesteps: Number of fully-connected timesteps that the 1D Unet operates on.
+          If None (default), uses Conv up/down sampling. This is the original
+          behavior used in Diffusion Policy. Otherwise, uses fully-connected
+          Linear1d with the given temporal dimension.
         """
 
         super().__init__()
@@ -193,8 +196,11 @@ class ConditionalUnet1D(nn.Module):
         ])
 
         down_modules = nn.ModuleList([])
-        Downsample = Linear1d if use_linear_up_down_sampling else Downsample1d
         for ind, (dim_in, dim_out) in enumerate(in_out):
+            downsample = (
+                Downsample1d(dim_out) if fc_timesteps is None
+                else Linear1d(fc_timesteps * dim_out)
+            )
             is_last = ind >= (len(in_out) - 1)
             down_modules.append(nn.ModuleList([
                 ConditionalResidualBlock1D(
@@ -203,12 +209,15 @@ class ConditionalUnet1D(nn.Module):
                 ConditionalResidualBlock1D(
                     dim_out, dim_out, cond_dim=cond_dim,
                     kernel_size=kernel_size, n_groups=n_groups),
-                Downsample(dim_out) if not is_last else nn.Identity()
+                downsample if not is_last else nn.Identity()
             ]))
 
         up_modules = nn.ModuleList([])
-        Upsample = Linear1d if use_linear_up_down_sampling else Upsample1d
         for ind, (dim_in, dim_out) in enumerate(reversed(in_out[1:])):
+            upsample = (
+                Upsample1d(dim_in) if fc_timesteps is None
+                else Linear1d(fc_timesteps * dim_in)
+            )
             is_last = ind >= (len(in_out) - 1)
             up_modules.append(nn.ModuleList([
                 ConditionalResidualBlock1D(
@@ -217,7 +226,7 @@ class ConditionalUnet1D(nn.Module):
                 ConditionalResidualBlock1D(
                     dim_in, dim_in, cond_dim=cond_dim,
                     kernel_size=kernel_size, n_groups=n_groups),
-                Upsample(dim_in) if not is_last else nn.Identity()
+                upsample if not is_last else nn.Identity()
             ]))
 
         final_conv = nn.Sequential(

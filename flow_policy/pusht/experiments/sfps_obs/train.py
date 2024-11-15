@@ -3,13 +3,8 @@ All functions in this file have been copied from the Diffusion Policy repo, in
 particular, this notebook (diffusion_policy_state_pusht_demo.ipynb):
 https://colab.research.google.com/drive/1gxdkgRVfM55zihY9TFLja97cSVZOZq2B
 """
-# diffusion policy import
-from typing import Dict
 import numpy as np
-from functools import partial
 import torch
-from torch import Tensor
-import torch.nn as nn
 from diffusers.training_utils import EMAModel
 from diffusers.optimization import get_scheduler
 from tqdm.auto import tqdm
@@ -34,7 +29,8 @@ obs_horizon = 2
 action_horizon = 8
 obs_dim = 5
 action_dim = 2
-sigma = 0.2
+σ0 = 0.05
+σ1 = 0.5
 num_epochs = 1000
 batch_size = 1024
 save_path = f"models/pusht_sfps_obs_{num_epochs}ep.pth"
@@ -45,7 +41,7 @@ save_path = f"models/pusht_sfps_obs_{num_epochs}ep.pth"
 velocity_net = ConditionalUnet1D(
     input_dim=action_dim,
     global_cond_dim=obs_dim*obs_horizon,
-    use_linear_up_down_sampling=True,
+    fc_timesteps=2,
 )
 
 # device transfer
@@ -56,7 +52,7 @@ policy = StreamingFlowPolicyStochastic(
     velocity_net=velocity_net,
     action_dim=action_dim,
     pred_horizon=pred_horizon,
-    sigma=sigma,
+    σ0=σ0, σ1=σ1,
     device=device,
 )
 
