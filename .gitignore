@@ -3,6 +3,9 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# Editor/IDEs
+.vscode/
+
 # Saved models
 /models
 

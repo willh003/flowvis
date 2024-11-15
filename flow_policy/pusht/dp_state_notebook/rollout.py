@@ -34,6 +34,7 @@ def Rollout(
     step_idx = 0
 
     policy_kwargs = policy_kwargs or {}
+    policy_kwargs["num_actions"] = 1 + action_horizon
 
     with tqdm(total=max_steps, desc="Eval PushTStateEnv") as pbar:
         while not done:
