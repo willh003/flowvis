@@ -52,7 +52,7 @@ dataloader = torch.utils.data.DataLoader(
     shuffle=True,
     # accelerate cpu-gpu transfer
     pin_memory=True,
-    # don't kill worker process afte each epoch
+    # don't kill worker process after each epoch
     persistent_workers=True
 )
 

@@ -4,16 +4,19 @@ particular, this notebook (diffusion_policy_state_pusht_demo.ipynb):
 https://colab.research.google.com/drive/1gxdkgRVfM55zihY9TFLja97cSVZOZq2B
 """
 # diffusion policy import
+from typing import Dict
 import numpy as np
+from functools import partial
 import torch
+from torch import Tensor
 import torch.nn as nn
-from diffusers.schedulers.scheduling_ddpm import DDPMScheduler
 from diffusers.training_utils import EMAModel
 from diffusers.optimization import get_scheduler
 from tqdm.auto import tqdm
 
 from flow_policy.pusht.dataset import PushTStateDatasetWithNextObsAsAction
 from flow_policy.pusht.dp_state_notebook.network import ConditionalUnet1D
+from flow_policy.pusht.sfps import StreamingFlowPolicyStochastic
 
 
 """
@@ -31,23 +34,44 @@ obs_horizon = 2
 action_horizon = 8
 obs_dim = 5
 action_dim = 2
-num_epochs = 100
-num_diffusion_iters = 100
-save_path = f"models/pusht_dp_obs_{num_epochs}ep.pth"
+sigma = 0.2
+num_epochs = 1000
+batch_size = 1024
+save_path = f"models/pusht_sfps_obs_{num_epochs}ep.pth"
 
 # =============================================================================
 
+# create network object
+velocity_net = ConditionalUnet1D(
+    input_dim=action_dim,
+    global_cond_dim=obs_dim*obs_horizon,
+    use_linear_up_down_sampling=True,
+)
+
+# device transfer
+device = torch.device('cuda')
+_ = velocity_net.to(device)
+
+policy = StreamingFlowPolicyStochastic(
+    velocity_net=velocity_net,
+    action_dim=action_dim,
+    pred_horizon=pred_horizon,
+    sigma=sigma,
+    device=device,
+)
+
 # create dataset from file
 dataset = PushTStateDatasetWithNextObsAsAction(
-    pred_horizon=16,
-    obs_horizon=2,
-    action_horizon=8,
+    pred_horizon=pred_horizon,
+    obs_horizon=obs_horizon,
+    action_horizon=action_horizon,
+    transform_datum_fn=policy.TransformTrainingDatum,
 )
 
 # create dataloader
 dataloader = torch.utils.data.DataLoader(
     dataset,
-    batch_size=256,
+    batch_size=batch_size,
     num_workers=1,
     shuffle=True,
     # accelerate cpu-gpu transfer
@@ -56,36 +80,15 @@ dataloader = torch.utils.data.DataLoader(
     persistent_workers=True
 )
 
-# create network object
-noise_pred_net = ConditionalUnet1D(
-    input_dim=action_dim,
-    global_cond_dim=obs_dim*obs_horizon
-)
-
-noise_scheduler = DDPMScheduler(
-    num_train_timesteps=num_diffusion_iters,
-    # the choise of beta schedule has big impact on performance
-    # we found squared cosine works the best
-    beta_schedule='squaredcos_cap_v2',
-    # clip output to [-1,1] to improve stability
-    clip_sample=True,
-    # our network predicts noise (instead of denoised action)
-    prediction_type='epsilon'
-)
-
-# device transfer
-device = torch.device('cuda')
-_ = noise_pred_net.to(device)
-
 # Exponential Moving Average
 # accelerates training and improves stability
 # holds a copy of the model weights
-ema = EMAModel(parameters=noise_pred_net.parameters(), power=0.75)
+ema = EMAModel(parameters=velocity_net.parameters(), power=0.75)
 
 # Standard ADAM optimizer
 # Note that EMA parametesr are not optimized
 optimizer = torch.optim.AdamW(
-    params=noise_pred_net.parameters(),
+    params=velocity_net.parameters(),
     lr=1e-4, weight_decay=1e-6)
 
 # Cosine LR schedule with linear warmup
@@ -103,36 +106,8 @@ with tqdm(range(num_epochs), desc='Epoch') as tglobal:
         # batch loop
         with tqdm(dataloader, desc='Batch', leave=False) as tepoch:
             for nbatch in tepoch:
-                # data normalized in dataset
-                # device transfer
-                nobs = nbatch['obs'].to(device)
-                naction = nbatch['action'].to(device)
-                B = nobs.shape[0]
-
-                # observation as FiLM conditioning
-                obs_cond = nobs[:,:obs_horizon,:]  # (B, OBS_HORIZON, OBS_DIM)
-                obs_cond = obs_cond.flatten(start_dim=1)  # (B, OBS_HORIZON * OBS_DIM)
-
-                # sample noise to add to actions
-                noise = torch.randn(naction.shape, device=device)
-
-                # sample a diffusion iteration for each data point
-                timesteps = torch.randint(
-                    0, noise_scheduler.config.num_train_timesteps,
-                    (B,), device=device
-                ).long()
-
-                # add noise to the clean images according to the noise magnitude at each diffusion iteration
-                # (this is the forward diffusion process)
-                noisy_actions = noise_scheduler.add_noise(
-                    naction, noise, timesteps)
-
-                # predict the noise residual
-                noise_pred = noise_pred_net(
-                    noisy_actions, timesteps, global_cond=obs_cond)
-
                 # L2 loss
-                loss = nn.functional.mse_loss(noise_pred, noise)
+                loss = policy.Loss(nbatch)
 
                 # optimize
                 loss.backward()
@@ -143,7 +118,7 @@ with tqdm(range(num_epochs), desc='Epoch') as tglobal:
                 lr_scheduler.step()
 
                 # update Exponential Moving Average of the model weights
-                ema.step(noise_pred_net.parameters())
+                ema.step(velocity_net.parameters())
 
                 # logging
                 loss_cpu = loss.item()
@@ -153,9 +128,9 @@ with tqdm(range(num_epochs), desc='Epoch') as tglobal:
 
 # Weights of the EMA model
 # is used for inference
-ema_noise_pred_net = noise_pred_net
-ema.copy_to(ema_noise_pred_net.parameters())
+ema_velocity_net = policy.velocity_net
+ema.copy_to(ema_velocity_net.parameters())
 
 # Save model
-torch.save(ema_noise_pred_net.state_dict(), save_path)
+torch.save(policy.state_dict(), save_path)
 print(f"Saved model to {save_path}.")

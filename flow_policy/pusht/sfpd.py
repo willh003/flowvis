@@ -10,7 +10,7 @@ from torchdyn.core import NeuralODE
 from flow_policy.pusht.dp_state_notebook.base_policy import Policy
 
 
-class StreamingFlowPolicyPositionOnly (Policy):
+class StreamingFlowPolicyDeterministic (Policy):
     def __init__(self,
                  velocity_net: nn.Module,
                  action_dim: int,

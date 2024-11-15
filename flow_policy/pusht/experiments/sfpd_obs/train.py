@@ -16,7 +16,7 @@ from tqdm.auto import tqdm
 
 from flow_policy.pusht.dataset import PushTStateDatasetWithNextObsAsAction
 from flow_policy.pusht.dp_state_notebook.network import ConditionalUnet1D
-from flow_policy.pusht.sfp import StreamingFlowPolicyPositionOnly
+from flow_policy.pusht.sfpd import StreamingFlowPolicyDeterministic
 
 
 """
@@ -52,7 +52,7 @@ velocity_net = ConditionalUnet1D(
 device = torch.device('cuda')
 _ = velocity_net.to(device)
 
-policy = StreamingFlowPolicyPositionOnly(
+policy = StreamingFlowPolicyDeterministic(
     velocity_net=velocity_net,
     action_dim=action_dim,
     pred_horizon=pred_horizon,
@@ -76,7 +76,7 @@ dataloader = torch.utils.data.DataLoader(
     shuffle=True,
     # accelerate cpu-gpu transfer
     pin_memory=True,
-    # don't kill worker process afte each epoch
+    # don't kill worker process after each epoch
     persistent_workers=True
 )
 
