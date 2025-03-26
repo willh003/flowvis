@@ -1,4 +1,32 @@
-# Flow Policy
+# Streaming Flow Policy
+
+## Installation
+
+1. Create a virtual environment
+    ```bash
+    python3 -m venv .venv --prompt=streaming-flow-policy
+    source .venv/bin/activate
+    ```
+
+### Via pip
+
+2. pip-install this repository.
+    ```bash
+    pip install -e .
+    ```
+
+### Via PDM (recommended for development)
+
+2. Install PDM.
+    ```bash
+    pip install pdm
+    ```
+
+3. Run pdm-install:
+    ```bash
+    pdm install
+    ```
+
 
 ## Building Jupyter Book
 
@@ -17,6 +45,10 @@ jupyter-book build docs
 #### To add a notebook to the Jupyter book
 
 Add a symlink to the `docs` directory.
+
+#### View Jupyter book locally
+
+The HTML content is created in the `docs/_build/html` directory.
 
 #### To deploy to MIT website
 
