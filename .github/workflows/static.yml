@@ -31,6 +31,19 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install jupyter-book
+      - name: Build Jupyter Book
+        run: |
+          jupyter-book build docs
+          mkdir -p website/notebooks
+          cp -r docs/_build/html/* website/notebooks/
       - name: Setup Pages
         uses: actions/configure-pages@v5
       - name: Upload artifact
