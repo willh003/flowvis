@@ -116,7 +116,7 @@ def plot_probability_density_and_streamlines(
         y=ts[:, 0].numpy(),
         u=u.numpy(),
         v=np.ones(u.shape), 
-        color='white', density=1, linewidth=0.5, arrowsize=0.5
+        color='white', density=1, linewidth=0.5, arrowsize=0.75
     )
 
     ax.set_xlim(-1, 1)
