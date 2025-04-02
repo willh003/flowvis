@@ -2,6 +2,7 @@
 __pycache__/
 *.py[cod]
 *$py.class
+MANIFEST.in
 
 # Builds
 docs/_build/

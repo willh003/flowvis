@@ -50,3 +50,9 @@ requires = ["pdm-backend"]
 build-backend = "pdm.backend"
 
 [tool.pdm]
+
+[tool.setuptools.package-data]
+exclude = [
+    "website",
+    "**/notebooks",
+]
