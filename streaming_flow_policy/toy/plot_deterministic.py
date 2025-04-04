@@ -131,9 +131,11 @@ def plot_probability_density_with_trajectories(
         fp: StreamingFlowPolicyDeterministic,
         ax: plt.Axes,
         x_starts: List[float | None],
+        colors: List[str] | None = None,
         linewidth: float=1,
         alpha: float=0.5,
         heatmap_alpha: float=1,
+        ode_steps: int=1000,
     ):
     ts = torch.linspace(0, 1, 200, dtype=torch.double)  # (T,)
     xs = torch.linspace(-1, 1, 200, dtype=torch.double)  # (X,)
@@ -141,17 +143,20 @@ def plot_probability_density_with_trajectories(
 
     heatmap = plot_probability_density(fp, ts, xs, ax, alpha=heatmap_alpha)
 
+    if colors is None:
+        colors = ['red'] * len(x_starts)
+
     # Replace None with random samples from N(0, σ₀²)
     x_starts = [
         x_start if x_start is not None else np.random.randn() * fp.σ0
         for x_start in x_starts
     ]
     x_starts = torch.tensor(x_starts, dtype=torch.double).unsqueeze(-1)  # (L, 1)
-    list_traj = fp.ode_integrate(x_starts)
+    list_traj = fp.ode_integrate(x_starts, num_steps=ode_steps)
     ts = np.linspace(0, 1, 200)  # (T,)
-    for traj in list_traj:
+    for traj, color in zip(list_traj, colors):
         xs = traj.vector_values(ts)  # (1, T+1)
-        ax.plot(xs[0], ts, color='red', linewidth=linewidth, alpha=alpha)
+        ax.plot(xs[0], ts, color=color, linewidth=linewidth, alpha=alpha)
 
     ax.tick_params(axis='both', which='both', length=0, labelbottom=False, labelleft=False)
     ax.set_xlim(-1, 1)
