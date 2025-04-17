@@ -806,7 +806,7 @@ div.underwater-results-carousel .slider-navigation-previous {
     </div>
     </section>
 
-    <section class="is-light">
+    <section class="is-dark">
         <!-- dummy anchor to adjust for navbar height -->
         <span class="nav-anchor" id="decoupling-stochasticity"></span>
     <div class="columns is-centered">
@@ -859,6 +859,44 @@ div.underwater-results-carousel .slider-navigation-previous {
     <p class="inner-text left" style="margin-bottom: 15px;">
         The main takeaway is that in <b>(c)</b>, even though all samples deterministically start from the same initial configuration (i.e., the current robot configuration), they evolve in a stochastic manner that covers both modes of the training distribution.
         This is possible because the stochastic latent variable \(z\) is correlated with \(q\), and the initial random sample \(z(0) \sim \mathcal{N}(0, 1)\) informs the direction \(q\) evolves in.
+    </p>
+
+    </div>
+    </div>
+    </div>
+    </section>
+
+    <section class="is-light">
+        <!-- dummy anchor to adjust for navbar height -->
+        <span class="nav-anchor" id="caveats"></span>
+    <div class="columns is-centered">
+    <div class="column has-text-centered">
+
+    <div class="container">
+        <div style="font-size: 35px">Caveats</div>
+
+    <figure style="margin-bottom: 10px; width: 100%; max-width: 900px;">
+        <img src="media/limitations/limitations-det.png" style="padding-top: 35px; padding-bottom: 5px; mix-blend-mode: multiply;">
+        <figcaption style="font-size: 17px; width:100%; max-width: 900px;">
+            Constructing a conditional flow using stochastic latent variables instead of adding noise to robot configurations.
+        </figcaption>
+    </figure>
+    <br>
+
+    <p class="inner-text left" style="margin-bottom: 15px;">
+        In this toy example, the \(x\)-axis represents a 1-D configuration space, and the \(y\)-axis represents both trajectory time and flow time.
+        <b>(a)</b>
+        The toy bi-modal training set, same as the previous example, contains two trajectories shown in <span class="medium-bold" style="color: red">red</span> and <span class="medium-bold" style="color: blue">blue</span>.
+        Given a demonstration trajectory from the training set (e.g., the demonstration in <span class="medium-bold" style="color: blue">blue</span>), we design a velocity field \(v(q, z, t \mid h)\) that takes as input time \(t \in [0, 1]\), the configuration \(q\) at time \(t\), as well as an additional latent variable \(z \in \mathcal{C}\).
+        The latent variable is responsible for injecting noise into the flow sampling process, allowing the initial robot configuration \(q(0)\) to be deterministically set to the initial configuration of the demonstration.
+        
+        The latent variable \(z(0) \sim \mathcal{N}(0, 1)\) is sampled from the standard normal distribution at the beginning of the flow process, similar to conventional diffusion/flow policies.
+        The velocity field \(v(q, z, t \mid h)\) generates trajectories in an extended sample space
+        \([0, 1] \rightarrow \mathcal{C}^2\)
+        where \(q\) and \(z\) are correlated and co-evolve with time.
+        <b>(b)</b> Shows the marginal distribution of configurations \(q(t)\), and <b>(c)</b> shows the marginal distributions of the latent variable \(z(t)\), at each time step.
+        Overlaid in red are the \(q\)- and \(z\)- projections, respectively, of trajectories sampled from the velocity field.
+        The configuration evolves in a narrow Gaussian tube around the demonstration, while the latent variable starts from \(\mathcal{N}(0, 1)\) at \(t=0\) and converges to the demonstration trajectory at \(t=1\); see the <a href="paper.pdf">paper</a> for a full description of the velocity field.
     </p>
 
     </div>
