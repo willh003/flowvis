@@ -251,7 +251,7 @@ p.inner-text.left {
     text-align: left;
 }
 
-.bold-medium {
+.medium-bold {
     font-weight: 500;
 }
 
@@ -703,31 +703,38 @@ div.underwater-results-carousel .slider-navigation-previous {
     <div class="column has-text-centered">
 
     <div class="container">
-        <div style="font-size: 35px"><i class="bold-medium">Constructing</i> conditional flows</div>
+        <div style="font-size: 35px"><i class="medium-bold">Constructing</i> conditional flows</div>
 
     <figure style="margin-bottom: 20px; width: 100%; max-width: 900px;">
         <img src="media/wineglass-det-stabilizing/demos-and-conditional-flow.png" style="height:480px; max-width: 900px; padding-top: 35px; padding-bottom: 5px; mix-blend-mode: multiply;">
     </figure>
     <br>
 
-<p class="inner-text" style="font-size: 18px;">
-    <i>Left:</i> <u>Conventional diffusion/flow policy are a <b><i>"trajectory of trajectories"</i></b></u>
+
+<p class="inner-text left" style="margin-bottom: 5px;">
+    To illustrate our method, consider a toy example shown in <b>(a)</b> of 1-D robot trajectory (\(x\)-axis) with two demonstration trajectories shown in <span class="medium-bold" style="color: blue">blue</span> and <span class="medium-bold" style="color: red">red</span>.
+    The \(y\)-axis represents time.
+    Given a demonstration trajectory from the training set (e.g., the <span class="medium-bold" style="color: blue">blue</span> one), we first <i>construct</i> a conditional flow in <b>(b)</b>  that samples trajectories from a thin tube around the demonstration.
+    
+    Let us represent the trajectory by \(\xi: [0, 1] \rightarrow \mathcal{C}\).
+    We construct a velocity field \(v_\xi(q, t \,|\, h)\) as follows:
 </p>
-<p class="inner-text left" style="margin-bottom: 10px;">
-    <a href="https://diffusion-policy.cs.columbia.edu/">Diffusion policy</a> and <a href="https://www.physicalintelligence.company/blog/pi0">flow-matching policy</a>
-    input a history of observations (not shown) to predict a "chunk" of future robot actions.
-    The \(x\)-axis represents the action (robot configuration) space, and the \(y\)-axis represents increasing diffusion timesteps.
-    Conventional diffusion/flow policies sample a <b><i>"trajectory of trajectories"</i></b> <i>i.e.</i> a diffusion/flow trajectory of robot trajectories.
-    This framework discards all intermediate robot trajectories that are computed, and must wait for the diffusion/flow process to complete before the first actions can be executed on the robot.
+
+<p class="inner-text left" style="font-size: 18px; margin-bottom: 5px;">
+    $$
+    \begin{align}
+    p_\xi^0(q) \hspace{0.5em}  &:=  \ \mathcal{N}\left(q ~\big\vert~ \xi(0) \,,\, \sigma_0^2\right)\\
+        v_\xi(q, t) \hspace{0.5em}  &:= \hspace{-0.5em}\underbrace{\ \dot{\xi}(t)\ }_{\hspace{-5em}\text{Demonstration velocity}} \hspace{-0.5em} - \underbrace{k(q - \xi(t))}_{\text{Stabilization term}}
+    \end{align}
+    $$
 </p>
-<p class="inner-text" style="font-size: 18px;">
-    <i>Right:</i> <u>Streaming flow policy treats <b><i>robot trajectories as flow trajectories</i></b></u>
-</p>
-<p class="inner-text left">
-    We introduce an imitation learning framework that simplifies diffusion/flow policies by treating <b><i>"robot trajectories as flow trajectories"</i></b>.
-    We develop a novel flow-matching algorithm in \(\mathcal{C}\)-space that starts from the current robot configuration and iteratively samples a sequence of configurations that constitutes a <i>single</i> robot trajectory.
-    This aligns the "diffusion time" of the flow sampling process with the "execution time" of the robot trajectory.
-    Importantly, the computed actions can be streamed to the robot's actuators on the fly <i><u>during</u></i> the flow sampling process, enabling significantly faster and reactive policies.
+
+<p class="inner-text left" style="margin-bottom: 5px;">
+    The initial distribution \(p_\xi^0(q)\) is a narrow Gaussian centered at the starting configuration \(\xi(0)\) of the demonstration with a small standard deviation \(\sigma_0\).
+    The velocity field \(v_\xi(q, t \,|\, h)\) is a combination of two terms.
+    The <i>demonstration velocity</i> is the velocity of the demonstration trajectory at time \(t\); this term serves to flow in the direction of the demonstration.
+    The <i>stabilization term</i> is a negative proportional error feedback that corrects deviations and guides back to the demonstration trajectory.
+    <a href="https://arxiv.org/abs/2307.14619">Block et. al.</a> have shown that controllers that stabilize around demonstration trajectories are known to reduce distribution shift and improve theoretical imitation learning guarantees.
 </p>
 
     </div>
@@ -743,294 +750,58 @@ div.underwater-results-carousel .slider-navigation-previous {
     <div class="column has-text-centered">
 
     <div class="container">
-        <div style="font-size: 35px"><i class="bold-medium">Learning</i> marginal flows</div>
+        <div style="font-size: 35px"><i class="medium-bold">Learning</i> marginal flows</div>
 
     <figure style="margin-bottom: 20px; width: 100%; max-width: 900px;">
         <img src="media/wineglass-det-stabilizing/marginal-flow.png" style="height:480px; max-width: 900px; padding-top: 35px; padding-bottom: 5px; mix-blend-mode: multiply;">
     </figure>
     <br>
 
-<p class="inner-text" style="font-size: 18px;">
-    <i>Left:</i> <u>Conventional diffusion/flow policy are a <b><i>"trajectory of trajectories"</i></b></u>
+<p class="inner-text left" style="margin-bottom: 15px;">
+    Then, learn a <i>marginal</i> velocity field that expresses multi-modal trajectories, as shown in <b>(c)</b>.
+    The marginal distribution over configurations at each time slice induced by the learned velocity field matches the training distribution!
 </p>
-<p class="inner-text left" style="margin-bottom: 10px;">
-    <a href="https://diffusion-policy.cs.columbia.edu/">Diffusion policy</a> and <a href="https://www.physicalintelligence.company/blog/pi0">flow-matching policy</a>
-    input a history of observations (not shown) to predict a "chunk" of future robot actions.
-    The \(x\)-axis represents the action (robot configuration) space, and the \(y\)-axis represents increasing diffusion timesteps.
-    Conventional diffusion/flow policies sample a <b><i>"trajectory of trajectories"</i></b> <i>i.e.</i> a diffusion/flow trajectory of robot trajectories.
-    This framework discards all intermediate robot trajectories that are computed, and must wait for the diffusion/flow process to complete before the first actions can be executed on the robot.
+
+<p class="inner-text left" style="margin-bottom: 15px;">
+    How does this magic work? The answer is <a class="medium-bold" href="https://arxiv.org/abs/2210.02747">flow matching</a>!.
 </p>
-<p class="inner-text" style="font-size: 18px;">
-    <i>Right:</i> <u>Streaming flow policy treats <b><i>robot trajectories as flow trajectories</i></b></u>
-</p>
-<p class="inner-text left">
-    We introduce an imitation learning framework that simplifies diffusion/flow policies by treating <b><i>"robot trajectories as flow trajectories"</i></b>.
-    We develop a novel flow-matching algorithm in \(\mathcal{C}\)-space that starts from the current robot configuration and iteratively samples a sequence of configurations that constitutes a <i>single</i> robot trajectory.
-    This aligns the "diffusion time" of the flow sampling process with the "execution time" of the robot trajectory.
-    Importantly, the computed actions can be streamed to the robot's actuators on the fly <i><u>during</u></i> the flow sampling process, enabling significantly faster and reactive policies.
+
+<p class="inner-text left" style="margin-bottom: 5px;">
+    Let \(p_\mathcal{D}(h, \xi)\) denote the training distribution over histories \(h\) and future trajectories \(\xi\).
+    constructed conditional velocity fields \(v_\xi(q, t)\) as target, we train a neural network \(v_\theta(q, t \mid h)\) using a finite-sample estimate of the <a class="medium-bold" href="https://arxiv.org/abs/2210.02747">conditional flow matching loss</a>:
+
+    <span style="font-size: 18px;">
+    \begin{align}
+        \mathcal{L}_{\text{CFM}}(v_\theta, p_\mathcal{D}) := ~ 
+        &\mathbb{E}_{(h, \xi) \sim p_\mathcal{D}}~\mathbb{E}_{t \sim {U}[0,1]}~\mathbb{E}_{q \sim p_\xi\left(q \mid t\right)}\nonumber \big\|v_\theta(q, t \mid h) - v_\xi(q, t)\big\|_2^2
+    \end{align}
+    </span>
+    This is simply an \(L_2\) loss between the predicted velocity field \(v_\theta(q, t \mid h)\) and the the conditional velocity field \(v_\xi(q, t)\) as target.
+    The expectation is over histories and trajectories in the training distribution \(p_\mathcal{D}(h, \xi)\), time \(t\) sampled uniformly from \([0, 1]\), and configuration \(q\) sampled from the constructed conditional flow.
+
+    The <a class="medium-bold" href="https://arxiv.org/abs/2210.02747">flow matching theorem</a> states that if the velocity network is trained well, then the per-timestep marginal distribution induced by learned flow matches the average of per-timestep marginal distributions of constructed conditional flows  \(p_\xi(q \mid t)\), over the  distribution of future trajectories in the training set \(p_\mathcal{D}(\xi \mid h)\) that share the given observation history \(h\).
+
+    <span style="font-size: 17px;">
+    \begin{align}
+        p^\star(q \mid t, h)
+        % &= \mathbb{E}_{\xi \sim p_\mathcal{D}(\xi \mid h)}\big[p_\xi(q \mid t)\big]
+        &= \int_\xi p_\xi(q \mid t)\,p_\mathcal{D}(\xi \mid h) \, d\xi
+        \label{eq:averaged-marginal-distributions}
+    \end{align}
+    </span>
+
+    <b>(e)</b> Then, we use flow matching to <i>learn</i> a velocity field that expresses multi-modal trajectories.
+    The marginal distribution over configurations at each time slice induced by the learned velocity field matches the training distribution.
+    <b>(d)</b> We show that constructing conditional flows that <i>stabilize</i> around demonstration trajectories reduces distribution shift and improves imitation learning performance.
+    Our method is able to represent multi-modal distributions
+    over robot trajectories
+    like diffusion/flow policies, while also being able to stream actions during the flow sampling process.
 </p>
 
     </div>
     </div>
     </div>
     </section>
-
-    <!-- <section class="is-dark">
-        dummy anchor to adjust for navbar height
-        <span class="nav-anchor" id="underwater-results"></span>
-    <div class="columns is-centered">
-    <div class="column has-text-centered">
-
-    <div class="container">
-        <div style="font-size: 35px">Anomaly detection on underwater images</div>
-        <div id="results-underwater-carousel" class="carousel results-carousel underwater-results-carousel" style="width: 100%; max-width: 975px; align-items: center; margin-bottom: 25px;">
-            <div>
-                <div style="display: inline-block;">
-                    <img style="border: 1px solid black; height: 250px;" src="media/qualitative-figures-and-videos/images/qualitative results/paper-fig-1/underwater/lionfish/0UAqFzWs-ood.png">
-                    <figcaption class="carousel-image-caption">Input image</figcaption>
-                </div>
-                <div style="display: inline-block;">
-                    <img style="border: 1px solid black; height: 250px;" src="media/qualitative-figures-and-videos/images/qualitative results/paper-fig-1/underwater/lionfish/0UAqFzWs-ind.png">
-                    <figcaption class="carousel-image-caption">Synthesized image</figcaption>
-                </div>
-
-                <div style="display: inline-block;">
-                    <img style="border: 1px solid black; height: 250px;" src="media/qualitative-figures-and-videos/images/qualitative results/paper-fig-1/underwater/lionfish/0UAqFzWs-diff-sam.png">
-                    <figcaption class="carousel-image-caption">Anomaly scores</figcaption>
-                </div><br><br>
-                <figcaption class="carousel-text-caption">
-                    The scene contains a lionfish that camouflages against rocks.
-                    Pertinently, the diffusion model <b>transforms the dark, gray fish into rocks</b> in the background. The diffusion model also <b>grows more rocks to bridge the gap</b> between the fish and the background! This allows our analysis pipeline to cleanly detect the fish as an anomaly.
-                </figcaption>
-            </div>
-
-            <div>
-                <div style="display: inline-block;">
-                    <video style="height: 260px;" autoplay muted playsinline autoplay loop controls>
-                        <source src="media/qualitative-figures-and-videos/videos/diver-fish-robot/diver-fish-robot-compressed.mp4">
-                    </video>
-                    <figcaption class="carousel-image-caption" style="width: 780px;">
-                        <div style="display: inline-block; width: 32.5%">Input image</div>
-                        <div style="display: inline-block; width: 32.5%">Synthesized image</div>
-                        <div style="display: inline-block; width: 32.5%">Anomaly scores</div>
-                    </figcaption>
-                </div><br><br>
-                <figcaption class="carousel-text-caption">
-                    The scene contains a diver, a fish, and a robot — all are anomalies in the dataset.
-                    The diffusion model <b>removes the diver fish, and robot</b> from the scene!
-                    It removes the foreground objects but retains the background almost unchanged.
-                    This allows our analysis pipeline to cleanly detect the three anomalies on the right.
-                </figcaption>
-            </div>
-
-            <div>
-                <div style="display: inline-block;">
-                    <video style="height: 260px;" autoplay muted playsinline autoplay loop controls>
-                        <source src="media/qualitative-figures-and-videos/videos/stingray/stingray-compressed.mp4">
-                    </video>
-                    <figcaption class="carousel-image-caption" style="width: 780px;">
-                        <div style="display: inline-block; width: 32.5%">Input image</div>
-                        <div style="display: inline-block; width: 32.5%">Synthesized image</div>
-                        <div style="display: inline-block; width: 32.5%">Anomaly scores</div>
-                    </figcaption>
-                </div><br><br>
-                <figcaption class="carousel-text-caption">
-                    A stingray appears midway in this video. While the stingray is of similar color to the seabed and camouflages against it, our diffusion model is able to <b>remove the stingray without affecting the rest of the scene</b>. This allows our analysis pipeline to cleanly detect the stingray as an anomaly, only in the frames that it appears in.
-                </figcaption>
-            </div>
-        </div>
-
-        <div style="text-align: center;"></div>
-            <div id="underwater-results-buttons" class="buttons is-centered is-medium">
-                Buttons will be dynamically added here
-            </div>
-        </div>
-
-        <script>
-        {
-            // https://bulma-carousel.onrender.com/
-            const carousels = bulmaCarousel.attach('#results-underwater-carousel', {
-                slidesToScroll: 1,
-                slidesToShow: 1,
-                loop: true,
-                infinite: true,
-                pagination: true,
-                icons: {
-                    'previous': `<svg viewBox="0 0 50 80" xml:space="preserve">
-                    <polyline fill="currentColor" stroke-width=".5em" stroke-linecap="round" stroke-linejoin="round" points="45.63,75.8 0.375,38.087 45.63,0.375 "/>
-                    </svg>`,
-                    'next': `<svg viewBox="0 0 50 80" xml:space="preserve">
-                    <polyline fill="currentColor" stroke-width=".5em" stroke-linecap="round" stroke-linejoin="round" points="0.375,0.375 45.63,38.087 0.375,75.8 "/>
-                    </svg>`
-                }
-            });
-            const carousel = carousels[0];
-            
-            const buttonsArray = [];
-            function buttonCallback (index, updateCarousel) {
-                // Set the focus of each button
-                buttonsArray.forEach((button, i) => {
-                    if (i === index) {
-                        button.classList.add('is-focused');
-                    } else {
-                        button.classList.remove('is-focused');
-                    }
-                });
-
-                // Update carousel
-                if (updateCarousel) {
-                    carousel.state.next = index;
-                    carousel.show(index);
-                }
-            }
-
-            function MakeAndAddButton (index, text) {
-                const buttonContainer = document.getElementById('underwater-results-buttons');
-                const button = document.createElement('button');
-                button.classList.add('button', 'nav-button', 'is-medium', 'is-rounded');
-                if (index === 0) button.classList.add('is-focused');
-                button.onclick = () => buttonCallback(index, updateCarousel=true);
-                button.textContent = text;
-                buttonContainer.appendChild(button);
-                buttonsArray.push(button);
-                return button;
-            }
-
-            MakeAndAddButton(0, 'Camouflaged fish');
-            MakeAndAddButton(1, 'Diver + robot + fish');
-            MakeAndAddButton(2, 'Stingray');
-
-            // Add event listener to the carousel
-            carousel.on('before:show', (state) => {
-                const positiveModulus = (a, b) => ((a % b) + b) % b;
-                const selectedIndex = positiveModulus(state.next, state.length);
-                buttonCallback(selectedIndex, updateCarousel=false);
-            });
-        }
-        </script>
-    </div>
-
-    </div>
-    </div>
-    </section> -->
-
-    <!-- <section class="is-colorful">
-        dummy anchor to adjust for navbar height
-        <span class="nav-anchor" id="failure-cases"></span> 
-    <div class="columns is-centered">
-    <div class="column has-text-centered">
-
-    <div class="container">
-        <div style="font-size: 35px">Failure cases</div>
-        <div id="failure-cases-carousel" class="carousel results-carousel" style="width: 100%; max-width: 942px; align-items: center; border: gray 0px solid; border-bottom-left-radius: 25px; border-bottom-right-radius: 25px; padding-bottom: 20px; padding-top: 0px">
-        </div>
-
-        <div style="margin-top: 10px;">
-            <label for="failure-cases-carousel-select" style="font-size: 20px">Show failure case:</label>
-            <select id="failure-cases-carousel-select"
-                    style="font-size: 18px; font-family: Avenir; font-weight: 500; height: 35px;  border-radius: 10px; background-color: white;">
-                Options will be dynamically added here
-            </select>
-        </div>
-
-        <script>
-        {
-            const carouselContainer = document.getElementById('failure-cases-carousel');
-            const selectElement = document.getElementById('failure-cases-carousel-select');
-
-            // Function to fetch and display data
-            async function fetchJsonDataAndSetupCarousel() {
-                const response = await fetch('./failure-cases.json');
-                const data = await response.json();
-
-                let htmlString = '';
-
-                // Clear the carousel container before appending
-                // This is an important step!
-                carouselContainer.innerHTML = '';
-
-                data.forEach((item, index) => {
-                    const pane = document.createElement('div');
-                    const htmlString = `
-                        <div style="display: inline-block;">
-                            <img style="border: 1px solid black; height: 250px;" src="${item.input}">
-                            <figcaption class="carousel-image-caption">Input image</figcaption>
-                        </div>
-                        
-                        <div style="display: inline-block;">
-                            <img style="border: 1px solid black; height: 250px;" src="${item.edited}">
-                            <figcaption class="carousel-image-caption">Synthesized image</figcaption>
-                        </div>
-
-                        <div style="display: inline-block;">
-                            <img style="border: 1px solid black; height: 250px;" src="${item.anomaly_mask}">
-                            <figcaption class="carousel-image-caption">Anomaly scores</figcaption>
-                        </div><br><br>
-
-                        <figcaption class="carousel-text-caption">
-                            ${item.caption}
-                        </figcaption>
-                    `;
-                    pane.innerHTML = htmlString;
-                    carouselContainer.appendChild(pane);
-
-                    // Add options to the select element
-                    const option = document.createElement('option');
-                    option.value = index;
-                    option.textContent = `\xa0${item.tag}\xa0`;
-                    selectElement.appendChild(option);
-                });
-
-
-                // https://bulma-carousel.onrender.com/
-                const carousels = bulmaCarousel.attach('#failure-cases-carousel', {
-                    slidesToScroll: 1,
-                    slidesToShow: 1,
-                    loop: true,
-                    infinite: true,
-                    pagination: true,
-                    icons: {
-                        'previous': `<svg viewBox="0 0 50 80" xml:space="preserve">
-                        <polyline fill="currentColor" stroke-width=".5em" stroke-linecap="round" stroke-linejoin="round" points="45.63,75.8 0.375,38.087 45.63,0.375 "/>
-                        </svg>`,
-                        'next': `<svg viewBox="0 0 50 80" xml:space="preserve">
-                        <polyline fill="currentColor" stroke-width=".5em" stroke-linecap="round" stroke-linejoin="round" points="0.375,0.375 45.63,38.087 0.375,75.8 "/>
-                        </svg>`
-                    }
-                });
-                const carousel = carousels[0];
-
-                function selectElementCallback (index, updateCarousel) {
-                    selectElement.value = index;
-                    if (updateCarousel) {
-                        carousel.state.next = index;
-                        carousel.show(index);
-                    }
-                }
-
-                // Add event listener to the carousel
-                carousel.on('before:show', (state) => {
-                    const positiveModulus = (a, b) => ((a % b) + b) % b;
-                    const selectedIndex = positiveModulus(state.next, state.length);
-                    selectElementCallback(selectedIndex, updateCarousel=false);
-                });
-
-                // Add event listener to the select element
-                selectElement.addEventListener('change', (event) => {
-                    const selectedIndex = parseInt(event.target.value);
-                    selectElementCallback(selectedIndex, updateCarousel=true);
-                });
-            }
-
-            // Call the function to fetch data and display it
-            fetchJsonDataAndSetupCarousel();
-        }
-        </script>
-    </div>
-
-    </div>
-    </div>
-    </section> -->
 
     <section class="is-dark">
     <div class="columns is-centered">
