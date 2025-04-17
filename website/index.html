@@ -251,6 +251,10 @@ p.inner-text.left {
     text-align: left;
 }
 
+.bold-medium {
+    font-weight: 500;
+}
+
 /* https://stackoverflow.com/a/13555927 */
 .nav-anchor {
     display: block;
@@ -483,16 +487,10 @@ div.underwater-results-carousel .slider-navigation-previous {
                     <a class="nav-link" href="#motivation">Motivation</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="#land-results">Land results</a>
+                    <a class="nav-link" href="#conditional-flow">Conditional-flow</a>
                 </li>
                 <li class="nav-item"></li>
-                    <a class="nav-link" href="#land-videos">Land videos</a>
-                </li>
-                <li class="nav-item"></li>
-                    <a class="nav-link" href="#underwater-results">Underwater results</a>
-                </li>
-                <li class="nav-item"></li>
-                    <a class="nav-link" href="#failure-cases">Failure cases</a>
+                    <a class="nav-link" href="#marginal-flow">Marginal-flow</a>
                 </li>
             <!-- <li class="nav-item">
                 <a class="nav-link" href="#paper">Paper</a>
@@ -658,14 +656,14 @@ div.underwater-results-carousel .slider-navigation-previous {
 
     <section class="is-light">
         <!-- dummy anchor to adjust for navbar height     -->
-        <span class="nav-anchor" id="pipeline"></span>
+        <span class="nav-anchor" id="motivation"></span>
     <div class="columns is-centered">
     <div class="column has-text-centered">
     <div class="container">
         <div style="font-size:35px;">Why <span class="colorful-text" style="font-style: italic; font-weight: bold;">streaming flow policy</span>?</div>
         <figure style="margin-bottom: 20px; width: 100%; max-width: 900px;">
-            <img src="media/motivation-dpfp.png" style="height:525px; max-width: 900px; padding-top: 35px; padding-bottom: 5px;">
-            <img src="media/motivation-sfp.png" style="height:525px; max-width: 900px; padding-top: 35px; padding-bottom: 5px;">
+            <img src="media/motivation-dpfp.png" style="height:500px; max-width: 900px; padding-top: 35px; padding-bottom: 5px; mix-blend-mode: multiply;">
+            <img src="media/motivation-sfp.png" style="height:500px; max-width: 900px; padding-top: 35px; padding-bottom: 5px; mix-blend-mode: multiply;">
             <br>
             <!-- <figcaption style="font-size: 17px; width:100%; max-width: 900px;">
                 <i><b>Left: </b></i>Conventional diffusion/flow policy.
@@ -698,237 +696,84 @@ div.underwater-results-carousel .slider-navigation-previous {
     </div>
     </section>
 
-    <!-- <section class="is-colorful">
-        dummy anchor to adjust for navbar height
-        <span class="nav-anchor" id="land-results"></span>
+    <section class="is-dark">
+        <!-- dummy anchor to adjust for navbar height -->
+        <span class="nav-anchor" id="conditional-flow"></span>
     <div class="columns is-centered">
     <div class="column has-text-centered">
 
     <div class="container">
-        <div style="font-size: 35px">Anomaly detection on land navigation images</div>
-        <div id="results-land-carousel" class="carousel results-carousel" style="width: 100%; max-width: 942px; align-items: center; border: gray 0px solid; border-bottom-left-radius: 25px; border-bottom-right-radius: 25px; padding-bottom: 20px; padding-top: 0px">
-        </div>
-        <div style="margin-top: 10px;">
-            <label for="carousel-select" style="font-size: 20px">Show example:</label>
-            <select id="carousel-select"
-                    style="font-size: 18px; font-family: Avenir; font-weight: 500; height: 35px;  border-radius: 10px; background-color: white;">
-                Options will be dynamically added here
-            </select>
-        </div>
-        <script>
-        {
-            const carouselContainer = document.getElementById('results-land-carousel');
-            const selectElement = document.getElementById('carousel-select');
+        <div style="font-size: 35px"><i class="bold-medium">Constructing</i> conditional flows</div>
 
-            // Function to fetch data and setup the carousel
-            async function fetchJsonDataAndSetupCarousel() {
-                const response = await fetch('./results-land.json');
-                const data = await response.json();
+    <figure style="margin-bottom: 20px; width: 100%; max-width: 900px;">
+        <img src="media/wineglass-det-stabilizing/demos-and-conditional-flow.png" style="height:480px; max-width: 900px; padding-top: 35px; padding-bottom: 5px; mix-blend-mode: multiply;">
+    </figure>
+    <br>
 
-                let htmlString = '';
-
-                // Clear the carousel container before appending
-                // This is an important step!
-                carouselContainer.innerHTML = '';
-
-                data.forEach((item, index) => {
-                    const pane = document.createElement('div');
-                    const htmlString = `
-                        <div style="display: inline-block;">
-                            <img style="border: 1px solid black; height: 250px;" src="${item.input}">
-                            <figcaption class="carousel-image-caption">Input image</figcaption>
-                        </div>
-                        
-                        <div style="display: inline-block;">
-                            <img style="border: 1px solid black; height: 250px;" src="${item.edited}">
-                            <figcaption class="carousel-image-caption">Synthesized image</figcaption>
-                        </div>
-
-                        <div style="display: inline-block;">
-                            <img style="border: 1px solid black; height: 250px;" src="${item.anomaly_mask}">
-                            <figcaption class="carousel-image-caption">Anomaly scores</figcaption>
-                        </div><br><br>
-
-                        <figcaption class="carousel-text-caption">
-                            ${item.caption}
-                        </figcaption>
-                    `;
-                    pane.innerHTML = htmlString;
-                    carouselContainer.appendChild(pane);
-
-                    // Add options to the select element
-                    const option = document.createElement('option');
-                    option.value = index;
-                    option.textContent = `\xa0${item.tag}\xa0`;
-                    selectElement.appendChild(option);
-                });
-
-
-                // https://bulma-carousel.onrender.com/
-                const carousels = bulmaCarousel.attach('#results-land-carousel', {
-                    slidesToScroll: 1,
-                    slidesToShow: 1,
-                    loop: true,
-                    infinite: true,
-                    pagination: false,
-                    icons: {
-                        'previous': `<svg viewBox="0 0 50 80" xml:space="preserve">
-                        <polyline fill="currentColor" stroke-width=".5em" stroke-linecap="round" stroke-linejoin="round" points="45.63,75.8 0.375,38.087 45.63,0.375 "/>
-                        </svg>`,
-                        'next': `<svg viewBox="0 0 50 80" xml:space="preserve">
-                        <polyline fill="currentColor" stroke-width=".5em" stroke-linecap="round" stroke-linejoin="round" points="0.375,0.375 45.63,38.087 0.375,75.8 "/>
-                        </svg>`
-                    }
-                });
-                const carousel = carousels[0];
-
-                function selectElementCallback (index, updateCarousel) {
-                    selectElement.value = index;
-                    if (updateCarousel) {
-                        carousel.state.next = index;
-                        carousel.show(index);
-                    }
-                }
-
-                // Add event listener to the carousel
-                carousel.on('before:show', (state) => {
-                    const positiveModulus = (a, b) => ((a % b) + b) % b;
-                    const selectedIndex = positiveModulus(state.next, state.length);
-                    selectElementCallback(selectedIndex, updateCarousel=false);
-                });
-
-                // Add event listener to the select element
-                selectElement.addEventListener('change', (event) => {
-                    const selectedIndex = parseInt(event.target.value);
-                    selectElementCallback(selectedIndex, updateCarousel=true);
-                });
-            }
-
-            // Call the function to fetch data and display it
-            fetchJsonDataAndSetupCarousel();
-        }
-        </script>
-    </div>
+<p class="inner-text" style="font-size: 18px;">
+    <i>Left:</i> <u>Conventional diffusion/flow policy are a <b><i>"trajectory of trajectories"</i></b></u>
+</p>
+<p class="inner-text left" style="margin-bottom: 10px;">
+    <a href="https://diffusion-policy.cs.columbia.edu/">Diffusion policy</a> and <a href="https://www.physicalintelligence.company/blog/pi0">flow-matching policy</a>
+    input a history of observations (not shown) to predict a "chunk" of future robot actions.
+    The \(x\)-axis represents the action (robot configuration) space, and the \(y\)-axis represents increasing diffusion timesteps.
+    Conventional diffusion/flow policies sample a <b><i>"trajectory of trajectories"</i></b> <i>i.e.</i> a diffusion/flow trajectory of robot trajectories.
+    This framework discards all intermediate robot trajectories that are computed, and must wait for the diffusion/flow process to complete before the first actions can be executed on the robot.
+</p>
+<p class="inner-text" style="font-size: 18px;">
+    <i>Right:</i> <u>Streaming flow policy treats <b><i>robot trajectories as flow trajectories</i></b></u>
+</p>
+<p class="inner-text left">
+    We introduce an imitation learning framework that simplifies diffusion/flow policies by treating <b><i>"robot trajectories as flow trajectories"</i></b>.
+    We develop a novel flow-matching algorithm in \(\mathcal{C}\)-space that starts from the current robot configuration and iteratively samples a sequence of configurations that constitutes a <i>single</i> robot trajectory.
+    This aligns the "diffusion time" of the flow sampling process with the "execution time" of the robot trajectory.
+    Importantly, the computed actions can be streamed to the robot's actuators on the fly <i><u>during</u></i> the flow sampling process, enabling significantly faster and reactive policies.
+</p>
 
     </div>
     </div>
-    </section> -->
+    </div>
+    </section>
 
     
-    <!-- <section class="is-white">
-        dummy anchor to adjust for navbar height
-        <span class="nav-anchor" id="land-videos"></span>
+    <section class="is-colorful">
+        <!-- dummy anchor to adjust for navbar height -->
+        <span class="nav-anchor" id="marginal-flow"></span>
     <div class="columns is-centered">
     <div class="column has-text-centered">
 
     <div class="container">
-        <div style="font-size: 35px">Land navigation videos with anomalies removed</div>
-        <div id="videos-land-carousel" class="carousel results-carousel land-videos-carousel" style="width: 100%; max-width: 975px; align-items: center; margin-bottom: 25px;">
-            <div>
-                <div style="display: inline-block;">
-                    <video style="height: 260px;" autoplay muted playsinline autoplay loop controls>
-                        <source src="media/qualitative-figures-and-videos/videos/trail15/trail15-compressed.mp4">
-                    </video>
-                    <figcaption class="carousel-image-caption">
-                        <div style="display: inline-block; width: 32.5%">Input image</div>
-                        <div style="display: inline-block; width: 32.5%">Synthesized image</div>
-                        <div style="display: inline-block; width: 32.5%">Anomaly scores</div>
-                    </figcaption>
-                </div>
-                <figcaption class="carousel-text-caption" style="margin-top: 15px">
-                    The diffusion model <b>blends the building into the sky</b> in the background, since the building and sky happen to be of the same color. The modified region looks like a clearing in the vegetation. Futhermore, the <b>building's door is morphed into a short tree stump!</b> This allows the analysis pipeline to detect the anomalies (right).
-                </figcaption>
-            </div>
+        <div style="font-size: 35px"><i class="bold-medium">Learning</i> marginal flows</div>
 
-            <div>
-                <div style="display: inline-block;">
-                    <video style="height: 260px;" muted playsinline autoplay loop controls>
-                        <source src="media/qualitative-figures-and-videos/videos/trail/trail-compressed.mp4">
-                    </video>
-                    <figcaption class="carousel-image-caption">
-                        <div style="display: inline-block; width: 32.5%">Input image</div>
-                        <div style="display: inline-block; width: 32.5%">Synthesized image</div>
-                        <div style="display: inline-block; width: 32.5%">Anomaly scores</div>
-                    </figcaption>
-                </div>
-                <figcaption class="carousel-text-caption" style="margin-top: 15px">
-                    The diffusion model <b>blends the brown vehicle into mud in the background</b>. However, it does not modify the semantics of other parts of the scene. Later in the video, the diffusion model <b>removes a metal container lying on the ground</b>. Both the brown vehicle and container are detected as anomalies.
-                </figcaption>
-            </div>
-        </div>
+    <figure style="margin-bottom: 20px; width: 100%; max-width: 900px;">
+        <img src="media/wineglass-det-stabilizing/marginal-flow.png" style="height:480px; max-width: 900px; padding-top: 35px; padding-bottom: 5px; mix-blend-mode: multiply;">
+    </figure>
+    <br>
 
-        <div style="margin-top: 10px; text-align: center;">
-            <div id="land-videos-buttons" class="buttons is-centered is-medium">
-                Buttons will be dynamically added here
-            </div>
-        </div>
-
-        <script>
-        {
-            // https://bulma-carousel.onrender.com/
-            const carousels = bulmaCarousel.attach('#videos-land-carousel', {
-                slidesToScroll: 1,
-                slidesToShow: 1,
-                loop: true,
-                infinite: true,
-                pagination: true,
-                icons: {
-                    'previous': `<svg viewBox="0 0 50 80" xml:space="preserve">
-                    <polyline fill="currentColor" stroke-width=".5em" stroke-linecap="round" stroke-linejoin="round" points="45.63,75.8 0.375,38.087 45.63,0.375 "/>
-                    </svg>`,
-                    'next': `<svg viewBox="0 0 50 80" xml:space="preserve">
-                    <polyline fill="currentColor" stroke-width=".5em" stroke-linecap="round" stroke-linejoin="round" points="0.375,0.375 45.63,38.087 0.375,75.8 "/>
-                    </svg>`
-                }
-            });
-            const carousel = carousels[0];
-            
-            const buttonsArray = [];
-            function buttonCallback (index, updateCarousel) {
-                // Set the focus of each button
-                buttonsArray.forEach((button, i) => {
-                    if (i === index) {
-                        button.classList.add('is-focused');
-                    } else {
-                        button.classList.remove('is-focused');
-                    }
-                });
-
-                // Update carousel
-                if (updateCarousel) {
-                    carousel.state.next = index;
-                    carousel.show(index);
-                }
-            }
-
-            function MakeAndAddButton (index, text) {
-                const buttonContainer = document.getElementById('land-videos-buttons');
-                const button = document.createElement('button');
-                button.classList.add('button', 'nav-button', 'is-medium', 'is-rounded');
-                if (index === 0) button.classList.add('is-focused');
-                button.onclick = () => buttonCallback(index, updateCarousel=true);
-                button.textContent = text;
-                buttonContainer.appendChild(button);
-                buttonsArray.push(button);
-                return button;
-            }
-
-            MakeAndAddButton(0, 'White building');
-            MakeAndAddButton(1, 'Brown vehicle');
-
-            // Add event listener to the carousel
-            carousel.on('before:show', (state) => {
-                const positiveModulus = (a, b) => ((a % b) + b) % b;
-                const selectedIndex = positiveModulus(state.next, state.length);
-                buttonCallback(selectedIndex, updateCarousel=false);
-            });
-        }
-        </script>
-    </div>
+<p class="inner-text" style="font-size: 18px;">
+    <i>Left:</i> <u>Conventional diffusion/flow policy are a <b><i>"trajectory of trajectories"</i></b></u>
+</p>
+<p class="inner-text left" style="margin-bottom: 10px;">
+    <a href="https://diffusion-policy.cs.columbia.edu/">Diffusion policy</a> and <a href="https://www.physicalintelligence.company/blog/pi0">flow-matching policy</a>
+    input a history of observations (not shown) to predict a "chunk" of future robot actions.
+    The \(x\)-axis represents the action (robot configuration) space, and the \(y\)-axis represents increasing diffusion timesteps.
+    Conventional diffusion/flow policies sample a <b><i>"trajectory of trajectories"</i></b> <i>i.e.</i> a diffusion/flow trajectory of robot trajectories.
+    This framework discards all intermediate robot trajectories that are computed, and must wait for the diffusion/flow process to complete before the first actions can be executed on the robot.
+</p>
+<p class="inner-text" style="font-size: 18px;">
+    <i>Right:</i> <u>Streaming flow policy treats <b><i>robot trajectories as flow trajectories</i></b></u>
+</p>
+<p class="inner-text left">
+    We introduce an imitation learning framework that simplifies diffusion/flow policies by treating <b><i>"robot trajectories as flow trajectories"</i></b>.
+    We develop a novel flow-matching algorithm in \(\mathcal{C}\)-space that starts from the current robot configuration and iteratively samples a sequence of configurations that constitutes a <i>single</i> robot trajectory.
+    This aligns the "diffusion time" of the flow sampling process with the "execution time" of the robot trajectory.
+    Importantly, the computed actions can be streamed to the robot's actuators on the fly <i><u>during</u></i> the flow sampling process, enabling significantly faster and reactive policies.
+</p>
 
     </div>
     </div>
-    </section> -->
+    </div>
+    </section>
 
     <!-- <section class="is-dark">
         dummy anchor to adjust for navbar height
