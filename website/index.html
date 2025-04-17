@@ -753,13 +753,14 @@ div.underwater-results-carousel .slider-navigation-previous {
         <div style="font-size: 35px"><i class="medium-bold">Learning</i> marginal flows</div>
 
     <figure style="margin-bottom: 20px; width: 100%; max-width: 900px;">
-        <img src="media/wineglass-det-stabilizing/marginal-flow.png" style="height:480px; max-width: 900px; padding-top: 35px; padding-bottom: 5px; mix-blend-mode: multiply;">
+        <img src="media/wineglass-det-stabilizing/marginal-flow-and-samples.png" style="height:480px; max-width: 900px; padding-top: 35px; padding-bottom: 5px; mix-blend-mode: multiply;">
     </figure>
     <br>
 
 <p class="inner-text left" style="margin-bottom: 15px;">
     Then, learn a <i>marginal</i> velocity field that expresses multi-modal trajectories, as shown in <b>(c)</b>.
     The marginal distribution over configurations at each time slice induced by the learned velocity field matches the training distribution!
+    The sampled trajectories shown in <b>(e)</b> indeed bifurcate and cover both modes of the demonstrated data.<br>
 </p>
 
 <p class="inner-text left" style="margin-bottom: 15px;">
@@ -773,7 +774,7 @@ div.underwater-results-carousel .slider-navigation-previous {
     <span style="font-size: 18px;">
     \begin{align}
         \mathcal{L}_{\text{CFM}}(v_\theta, p_\mathcal{D}) := ~ 
-        &\mathbb{E}_{(h, \xi) \sim p_\mathcal{D}}~\mathbb{E}_{t \sim {U}[0,1]}~\mathbb{E}_{q \sim p_\xi\left(q \mid t\right)}\nonumber \big\|v_\theta(q, t \mid h) - v_\xi(q, t)\big\|_2^2
+        &\mathbb{E}_{(h, \xi) \sim p_\mathcal{D}}~\mathbb{E}_{t \sim {U}[0,1]}~\mathbb{E}_{q \sim p_\xi\left(q \mid t\right)} ~ \big\|v_\theta(q, t \mid h) - v_\xi(q, t)\big\|_2^2
     \end{align}
     </span>
     This is simply an \(L_2\) loss between the predicted velocity field \(v_\theta(q, t \mid h)\) and the the conditional velocity field \(v_\xi(q, t)\) as target.
@@ -790,12 +791,8 @@ div.underwater-results-carousel .slider-navigation-previous {
     \end{align}
     </span>
 
-    <b>(e)</b> Then, we use flow matching to <i>learn</i> a velocity field that expresses multi-modal trajectories.
-    The marginal distribution over configurations at each time slice induced by the learned velocity field matches the training distribution.
-    <b>(d)</b> We show that constructing conditional flows that <i>stabilize</i> around demonstration trajectories reduces distribution shift and improves imitation learning performance.
-    Our method is able to represent multi-modal distributions
-    over robot trajectories
-    like diffusion/flow policies, while also being able to stream actions during the flow sampling process.
+    Streaming flow policy is able to both <b>represent multi-modal distributions</b> over robot trajectories
+    like diffusion/flow policies, while also being <b>able to stream actions</b> during the flow sampling process.
 </p>
 
     </div>
@@ -811,7 +808,10 @@ div.underwater-results-carousel .slider-navigation-previous {
         <!-- <hr class="container"> -->
         <div style="font-size: 32px">Acknowledgements</div>
         <p style="font-size: 16px; text-align: left; width: 95%; margin-top: 15px;">
-            This material is based upon work supported by the Army Research Office under Cooperative Agreement No. W911NF-21-2-0150. The views and conclusions contained in this document are those of the authors and should not be interpreted as representing the official policies, either expressed or implied, of the Army Research Office or the U.S. Government. The U.S. Government is authorized to reproduce and distribute reprints for Government purposes notwithstanding any copyright notation herein.
+            This material is based upon work supported by the MIT Quest for Intelligence initiative.
+            <!-- Army Research Office under Cooperative Agreement No. W911NF-21-2-0150. -->
+            The views and conclusions contained in this document are those of the authors and should not be interpreted as representing the official policies, either expressed or implied, of MIT or the U.S. Government.
+            <!-- The U.S. Government is authorized to reproduce and distribute reprints for Government purposes notwithstanding any copyright notation herein. -->
         </p>
     <br>
     <span class="link-block" style="margin-left: 2px; margin-right: 2px; margin-top: 20px">
