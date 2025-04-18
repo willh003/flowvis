@@ -33,6 +33,23 @@ body,td,th {
     overflow-x: hidden;
 }
 
+:root {
+    --epsilon-shape: "Ɛ";
+    --three-shape: "3";
+}
+
+.shape-epsilon {
+    font-size: 18px;
+    color: blue;
+    font-weight: bold;
+}
+
+.shape-three {
+    font-size: 18px;
+    color: red;
+    font-weight: bold;
+}
+
 .canvas {
     border: 1px solid black;
 }
@@ -874,30 +891,48 @@ div.underwater-results-carousel .slider-navigation-previous {
 
     <div class="container">
         <div style="font-size: 35px">Caveats</div>
+        <div style="font-size: 20px">Streaming flow policy only matches per-timestep marginal distributions, not necessarily the joint distribution</div>
 
     <figure style="margin-bottom: 10px; width: 100%; max-width: 900px;">
-        <img src="media/limitations/limitations-det.png" style="padding-top: 35px; padding-bottom: 5px; mix-blend-mode: multiply;">
+        <img src="media/limitations/limitations-det.png" style="padding-top: 35px; padding-bottom: 5px; height: 350px; mix-blend-mode: multiply;">
         <figcaption style="font-size: 17px; width:100%; max-width: 900px;">
-            Constructing a conditional flow using stochastic latent variables instead of adding noise to robot configurations.
+            Streaming flow policy only matches per-timestep marginal distributions, not necessarily the joint distribution.<br>
+            Samples from the stochastic variant of streaming flow policy with shapes: "<span style="font-size: 18px; color: blue; font-weight: bold;">Ɛ</span>" and "<span style="font-size: 18px; color: red; font-weight: bold;">3</span>".
         </figcaption>
     </figure>
-    <br>
 
     <p class="inner-text left" style="margin-bottom: 15px;">
-        In this toy example, the \(x\)-axis represents a 1-D configuration space, and the \(y\)-axis represents both trajectory time and flow time.
+        A toy example illustrating how streaming flow policy matches marginal distribution of configurations in the trajectory at all time steps, but not necessarily their joint distribution.
+        The \(x\)-axis represents a 1-D configuration space, and the \(y\)-axis represents both trajectory time and flow time. 
         <b>(a)</b>
-        The toy bi-modal training set, same as the previous example, contains two trajectories shown in <span class="medium-bold" style="color: red">red</span> and <span class="medium-bold" style="color: blue">blue</span>.
-        Given a demonstration trajectory from the training set (e.g., the demonstration in <span class="medium-bold" style="color: blue">blue</span>), we design a velocity field \(v(q, z, t \mid h)\) that takes as input time \(t \in [0, 1]\), the configuration \(q\) at time \(t\), as well as an additional latent variable \(z \in \mathcal{C}\).
-        The latent variable is responsible for injecting noise into the flow sampling process, allowing the initial robot configuration \(q(0)\) to be deterministically set to the initial configuration of the demonstration.
-        
-        The latent variable \(z(0) \sim \mathcal{N}(0, 1)\) is sampled from the standard normal distribution at the beginning of the flow process, similar to conventional diffusion/flow policies.
-        The velocity field \(v(q, z, t \mid h)\) generates trajectories in an extended sample space
-        \([0, 1] \rightarrow \mathcal{C}^2\)
-        where \(q\) and \(z\) are correlated and co-evolve with time.
-        <b>(b)</b> Shows the marginal distribution of configurations \(q(t)\), and <b>(c)</b> shows the marginal distributions of the latent variable \(z(t)\), at each time step.
-        Overlaid in red are the \(q\)- and \(z\)- projections, respectively, of trajectories sampled from the velocity field.
-        The configuration evolves in a narrow Gaussian tube around the demonstration, while the latent variable starts from \(\mathcal{N}(0, 1)\) at \(t=0\) and converges to the demonstration trajectory at \(t=1\); see the <a href="paper.pdf">paper</a> for a full description of the velocity field.
+        The bi-modal training set contains two <i>intersecting</i> demonstration trajectories,
+        illustrated in <span class="medium-bold" style="color: blue">blue</span> and <span class="medium-bold" style="color: red">red</span>, with shapes "<span style="font-size: 18px; color: blue; font-weight: bold;">S</span>" and "<span style="font-size: 19px; color: red; font-weight: bold;">Ƨ</span>" respectively.
+        <b>(b)</b> The learned velocity flow field \(v_{\theta}(q, t \mid h)\) and the induced marginal distributions of configurations at each time step.
+        The marginal distributions perfectly match the training data.
+        <b>(c)</b> Trajectories sampled from the learned velocity field. Trajectories that start from \(q < 0\) are shown in blue, and those starting from \(q > 0\) are shown in red. The sampled trajectories have shapes "<span style="font-size: 18px; color: blue; font-weight: bold;">Ɛ</span>" and "<span style="font-size: 18px; color: red; font-weight: bold;">3</span>", with equal probability. These shapes are different from the shapes "<span style="font-size: 18px; color: blue; font-weight: bold;">S</span>" and "<span style="font-size: 19px; color: red; font-weight: bold;">Ƨ</span>" in the training distribution, although their per-timestep marginal distributions are identical.
     </p>
+
+    <figure style="margin-bottom: 10px; width: 100%; max-width: 900px;">
+        <img src="media/limitations/limitations-stoc.png" style="padding-top: 35px; padding-bottom: 5px; height: 350px; mix-blend-mode: multiply;">
+        <figcaption style="font-size: 17px; width:100%; max-width: 900px;">
+            Streaming flow policy only matches per-timestep marginal distributions, not necessarily the joint distribution.<br>
+            Samples from the deterministic variant of streaming flow policy.
+        </figcaption>
+    </figure>
+
+    <p class="inner-text left" style="margin-bottom: 15px;">
+        Different variants of streaming flow policy can produce different joint distributions of configurations that are consistent with the per-timestep marginal distributions in the training data.
+        This example is produced using the <a href="#decoupling-stochasticity">stochastic version</a> of streaming flow policy.
+        <b>(a)</b>
+        The marginal distribution of configurations at each time step learned by the stochastic streaming flow policy matches the training data.
+        <b>(b)</b> Samples from the trained policy produces <i>four</i> modes with shapes "<span style="font-size: 19px; color: blue; font-weight: bold;">Ƨ</span>", "<span style="font-size: 18px; color: red; font-weight: bold;">S</span>", "<span style="font-size: 18px; color: blue; font-weight: bold;">Ɛ</span>" and "<span style="font-size: 18px; color: red; font-weight: bold;">3</span>", whereas the training data contains only two modes with shapes "<span style="font-size: 18px; color: red; font-weight: bold;">S</span>" and "<span style="font-size: 19px; color: blue; font-weight: bold;">Ƨ</span>".
+        Due to stochasticity introduced by decoupled latent variables, trajectories in blue (alternatively, red) that start from \(q < 0\) (alternatively, \(q > 0\)) are able to split in either direction at the point of intersection.
+    </p>
+
+    <p class="inner-text left" style="margin-bottom: 15px;">
+        While streaming flow policy cannot capture global constraints across timesteps, it can still capture local constraints such as arbitrary positions constraints and convex velocity constraints; see the <a href="paper.pdf">paper</a> for more details.
+    </p>
+    
 
     </div>
     </div>
@@ -936,6 +971,18 @@ div.underwater-results-carousel .slider-navigation-previous {
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            // Define the styled span as a variable
+            const epsilonShape = '<span style="font-size: 18px; color: blue; font-weight: bold;">Ɛ</span>';
+            const threeShape = '<span style="font-size: 18px; color: red; font-weight: bold;">3</span>';
+            
+            // Replace the hardcoded spans with the variables
+            document.querySelectorAll('.shape-epsilon').forEach(el => {
+                el.innerHTML = epsilonShape;
+            });
+            document.querySelectorAll('.shape-three').forEach(el => {
+                el.innerHTML = threeShape;
+            });
+
             const navAnchors = document.querySelectorAll('.nav-anchor');
             const navLinks = document.querySelectorAll('.nav-link');
 
