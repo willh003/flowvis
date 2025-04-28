@@ -22,19 +22,19 @@ class StreamingFlowPolicyStochastic (Policy):
         """
         Conditional flow:
         • At time t=0, we sample:
-            • q₀ ~ N(q̃(0), σ₀)
+            • q₀ ~ N(ξ(0), σ₀)
             • z₀ ~ N(0, 1)
 
         • Flow trajectory at time t:
-            • q(t) = q₀ + (q̃(t) - q̃(0)) + (σᵣt) z₀
-            • z(t) = (1 - (1-σ₁)t)z₀ + tq̃(t)
+            • q(t) = q₀ + (ξ(t) - ξ(0)) + (σᵣt) z₀
+            • z(t) = (1 - (1-σ₁)t)z₀ + tξ(t)
               • z starts from a pure noise sample z₀ that drifts towards the
               trajectory. Therefore, z(t) is uncorrelated with q at t=0, but
               eventually becomes very informative of the trajectory.
 
         • Conditional velocity field:
-            • uq(q, z, t) = ṽ(t) + σᵣz₀
-            • uz(q, z, t) = q̃(t) + tṽ(t) - (1-σ₁)z₀
+            • vq(q, z, t) = ξ̇(t) + σᵣz₀
+            • vz(q, z, t) = ξ(t) + tξ̇(t) - (1-σ₁)z₀
 
         Args:
             velocity_net (nn.Module): velocity network
@@ -71,8 +71,8 @@ class StreamingFlowPolicyStochastic (Policy):
                 'obs' (np.ndarray, shape=(OBS_HORIZON, OBS_DIM), dtype=np.float32)
                 'q' (np.ndarray, shape=(1, ACTION_DIM), dtype=np.float32): configuration
                 'z' (np.ndarray, shape=(1, ACTION_DIM), dtype=np.float32): latent variable
-                'uq' (np.ndarray, shape=(1, ACTION_DIM), dtype=np.float32): target q-velocity
-                'uz' (np.ndarray, shape=(1, ACTION_DIM), dtype=np.float32): target z-velocity
+                'vq' (np.ndarray, shape=(1, ACTION_DIM), dtype=np.float32): target q-velocity
+                'vz' (np.ndarray, shape=(1, ACTION_DIM), dtype=np.float32): target z-velocity
                 't' (np.ndarray, shape=(,), dtype=np.float32): time
         """
         obs, action = datum['obs'], datum['action']
@@ -99,8 +99,8 @@ class StreamingFlowPolicyStochastic (Policy):
         )
 
         time = np.float32(np.random.rand())  # (,)
-        q̃t = traj.value(time).T  # (1, ACTION_DIM)
-        ṽt = traj.EvalDerivative(time).T  # (1, ACTION_DIM)
+        ξt = traj.value(time).T  # (1, ACTION_DIM)
+        ξ̇t = traj.EvalDerivative(time).T  # (1, ACTION_DIM)
         σ0 = self.σ0.item()
         σ1 = self.σ1.item()
         σr = self.σr.item()
@@ -110,21 +110,21 @@ class StreamingFlowPolicyStochastic (Policy):
 
         # Sample qt
         ε_q0 =  σ0 * np.random.randn(1, ACTION_DIM)  # (1, ACTION_DIM)
-        qt = q̃t + ε_q0 + σr * time * z0  # (1, ACTION_DIM)
+        qt = ξt + ε_q0 + σr * time * z0  # (1, ACTION_DIM)
 
         # Sample zt
-        zt = (1 - (1-σ1) * time) * z0 + time * q̃t
+        zt = (1 - (1-σ1) * time) * z0 + time * ξt
 
         # Compute conditional flow
-        uq = ṽt + σr * z0  # (1, ACTION_DIM)
-        uz = q̃t + time * ṽt - (1 - σ1) * z0  # (1, ACTION_DIM)
+        vq = ξ̇t + σr * z0  # (1, ACTION_DIM)
+        vz = ξt + time * ξ̇t - (1 - σ1) * z0  # (1, ACTION_DIM)
 
         return {
             'obs': obs,  # (OBS_HORIZON, OBS_DIM)
             'q': qt.astype(np.float32),  # (1, ACTION_DIM)
             'z': zt.astype(np.float32),  # (1, ACTION_DIM)
-            'uq': uq.astype(np.float32),  # (1, ACTION_DIM)
-            'uz': uz.astype(np.float32),  # (1, ACTION_DIM)
+            'vq': vq.astype(np.float32),  # (1, ACTION_DIM)
+            'vz': vz.astype(np.float32),  # (1, ACTION_DIM)
             't': time,  # (,)
         }
 
@@ -136,8 +136,8 @@ class StreamingFlowPolicyStochastic (Policy):
                 'obs' (Tensor, shape=(B, OBS_HORIZON, OBS_DIM))
                 'q' (Tensor, shape=(B, 1, ACTION_DIM))
                 'z' (Tensor, shape=(B, 1, ACTION_DIM), dtype=np.float32): latent variable
-                'uq' (Tensor, shape=(B, 1, ACTION_DIM), dtype=np.float32): target q-velocity
-                'uz' (Tensor, shape=(B, 1, ACTION_DIM), dtype=np.float32): target z-velocity
+                'vq' (Tensor, shape=(B, 1, ACTION_DIM), dtype=np.float32): target q-velocity
+                'vz' (Tensor, shape=(B, 1, ACTION_DIM), dtype=np.float32): target z-velocity
                 't' (Tensor, shape=(B,)): time
 
         Returns:
@@ -147,8 +147,8 @@ class StreamingFlowPolicyStochastic (Policy):
         obs = batch['obs'].to(self.device)  # (B, OBS_HORIZON, OBS_DIM)
         q = batch['q'].to(self.device)  # (B, 1, ACTION_DIM)
         z = batch['z'].to(self.device)  # (B, 1, ACTION_DIM)
-        uq = batch['uq'].to(self.device)  # (B, 1, ACTION_DIM)
-        uz = batch['uz'].to(self.device)  # (B, 1, ACTION_DIM)
+        vq = batch['vq'].to(self.device)  # (B, 1, ACTION_DIM)
+        vz = batch['vz'].to(self.device)  # (B, 1, ACTION_DIM)
         t = batch['t'].to(self.device)  # (B,)
         B = obs.shape[0]
 
@@ -157,15 +157,15 @@ class StreamingFlowPolicyStochastic (Policy):
 
         # concatenate q and z
         x = torch.cat((q, z), dim=-2)  # (B, 2, ACTION_DIM)
-        u_target = torch.cat((uq, uz), dim=-2)  # (B, 2, ACTION_DIM)
+        v_target = torch.cat((vq, vz), dim=-2)  # (B, 2, ACTION_DIM)
 
         # predict the velocity
-        u_pred = self.velocity_net(
+        v_pred = self.velocity_net(
             sample=x, timestep=t, global_cond=obs_cond
         )  # (B, 2, ACTION_DIM)
 
         # L2 loss
-        loss = nn.functional.mse_loss(u_pred, u_target)  # (,)
+        loss = nn.functional.mse_loss(v_pred, v_target)  # (,)
         return loss
 
     @torch.inference_mode()

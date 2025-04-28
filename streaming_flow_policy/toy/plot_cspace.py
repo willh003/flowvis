@@ -4,10 +4,10 @@ import matplotlib.pyplot as plt
 import torch; torch.set_default_dtype(torch.double)
 from torch import Tensor
 
-from streaming_flow_policy.toy.sfpd import StreamingFlowPolicyDeterministic
+from streaming_flow_policy.all import StreamingFlowPolicyCSpace
 
 def plot_probability_density(
-        fp: StreamingFlowPolicyDeterministic,
+        fp: StreamingFlowPolicyCSpace,
         ts: Tensor,
         xs: Tensor,
         ax: plt.Axes,
@@ -17,7 +17,7 @@ def plot_probability_density(
     ):
     """
     Args:
-        fp (StreamingFlowPolicyDeterministic): Flow policy.
+        fp (StreamingFlowPolicyCSpace): Flow policy.
         ts (Tensor, dtype=float, shape=(T, X)): Time values in [0,1].
         xs (Tensor, dtype=float, shape=(T, X)): Configuration values.
         ax (plt.Axes): Axes to plot on.
@@ -41,7 +41,7 @@ def plot_probability_density(
     return ax.imshow(p, origin='lower', extent=extent, aspect=aspect, alpha=alpha)
 
 def plot_probability_density_and_vector_field(
-        fp: StreamingFlowPolicyDeterministic,
+        fp: StreamingFlowPolicyCSpace,
         ax: plt.Axes,
         num_points: int=200,
         num_quiver: int=20,
@@ -62,8 +62,8 @@ def plot_probability_density_and_vector_field(
     heatmap = plot_probability_density(fp, ts, xs, ax)
 
     # Compute marginal velocity field.
-    u = fp.u_marginal(xs.unsqueeze(-1), ts)  # (T, X, 1)
-    u = u.squeeze(-1)  # (T, X)
+    v = fp.v_marginal(xs.unsqueeze(-1), ts)  # (T, X, 1)
+    v = v.squeeze(-1)  # (T, X)
 
     # Calculate the indices to pick points vertically symmetrically.
     quiver_indices_x = torch.linspace(0, xs.shape[1] - 1, num_quiver).round().long()
@@ -72,7 +72,7 @@ def plot_probability_density_and_vector_field(
     ax.quiver(
         xs[quiver_indices_t][:, quiver_indices_x],
         ts[quiver_indices_t][:, quiver_indices_x], 
-        u[quiver_indices_t][:, quiver_indices_x],
+        v[quiver_indices_t][:, quiver_indices_x],
         np.ones([len(quiver_indices_t), len(quiver_indices_x)]), 
         color='white', pivot='tail',
         scale=40, width=0.002, headwidth=3, headlength=4,
@@ -87,7 +87,7 @@ def plot_probability_density_and_vector_field(
     return heatmap
 
 def plot_probability_density_and_streamlines(
-        fp: StreamingFlowPolicyDeterministic,
+        fp: StreamingFlowPolicyCSpace,
         ax: plt.Axes,
         num_points: int=400,
     ):
@@ -107,15 +107,15 @@ def plot_probability_density_and_streamlines(
     heatmap = plot_probability_density(fp, ts, xs, ax)
 
     # Compute marginal velocity field.
-    u = fp.u_marginal(xs.unsqueeze(-1), ts)  # (T, X, 1)
-    u = u.squeeze(-1)  # (T, X)
+    v = fp.v_marginal(xs.unsqueeze(-1), ts)  # (T, X, 1)
+    v = v.squeeze(-1)  # (T, X)
 
     # Plot streamlines
     ax.streamplot(
         x=xs[0].numpy(),
         y=ts[:, 0].numpy(),
-        u=u.numpy(),
-        v=np.ones(u.shape), 
+        u=v.numpy(),
+        v=np.ones(v.shape), 
         color='white', density=1, linewidth=0.5, arrowsize=0.75
     )
 
@@ -128,7 +128,7 @@ def plot_probability_density_and_streamlines(
     return heatmap
 
 def plot_probability_density_with_trajectories(
-        fp: StreamingFlowPolicyDeterministic,
+        fp: StreamingFlowPolicyCSpace,
         ax: plt.Axes,
         x_starts: List[float | None],
         colors: List[str] | None = None,
