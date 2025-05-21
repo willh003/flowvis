@@ -982,9 +982,8 @@ div.underwater-results-carousel .slider-navigation-previous {
                 slidesToShow: 1
             });
         </script>
-        <br>
 
-        <p class="inner-text left" style="margin-bottom: 15px; width: 95%;">
+        <p class="inner-text left" style="margin-top: 10px; margin-bottom: 15px; width: 100%;">
             We train streaming flow policy on a 7-DOF Franka FR3 robot arm to peform the task of picking up a green apple in the presence of clutter.
             We provide human demonstrations via kinesthetic teaching.
             The observations of the robot are raw RGB images, and the action space is the pose of the gripper.
@@ -992,24 +991,11 @@ div.underwater-results-carousel .slider-navigation-previous {
             Streaming flow policy is faster and smoother than diffusion policy.
         </p>
 
-        <figure style="margin-bottom: 10px; margin-top: 15px; margin-right: 2px; width: 48%">
-            <figcaption style="font-size: 17px; font-style: italic">Diffusion policy</figcaption>
-            <video style="width: 100%; max-width: 900px; border: 2px solid black" muted playsinline autoplay loop controls>
-                <source src="media/real-world/compressed-webm/dp/may14-37s.webm">
+        <figure style="margin-bottom: 10px; margin-top: 10px; margin-right: 2px; width: 100%">
+            <video style="width: 100%; max-width: 900px; mix-blend-mode: multiply;" muted playsinline autoplay loop controls>
+                <source src="media/real-world/dp-sfp-comparison.mp4">
             </video>
         </figure>
-        <figure style="margin-bottom: 10px; margin-top: 15px; margin-left: 2px;width: 48%">
-            <figcaption style="font-size: 17px; font-style: italic">Streaming flow policy</figcaption>
-            <video style="width: 100%; max-width: 900px; border: 2px solid black" muted playsinline autoplay loop controls>
-                <source src="media/real-world/compressed-webm/sfp/non-streaming/may8-37s.webm">
-            </video>
-        </figure>
-        <br>
-
-        <p class="inner-text left" style="margin-bottom: 15px; width: 95%;">
-            <!-- Streaming flow policy is faster and smoother than diffusion policy. -->
-        </p>
-
     </div>
     </div>
     </div>
