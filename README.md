@@ -15,16 +15,16 @@
     pip install -e .
     ```
 
-### Via PDM (recommended for development)
+### Via uv (recommended for development)
 
-2. Install PDM.
+2. Install [uv](https://docs.astral.sh/uv/).
     ```bash
-    pip install pdm
+    pip install uv
     ```
 
-3. Run pdm-install:
+3. Sync dependencies using uv:
     ```bash
-    pdm install
+    uv sync
     ```
 
 
