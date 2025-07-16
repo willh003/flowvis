@@ -1,6 +1,11 @@
-# Streaming Flow Policy
+<h1 align="center">Streaming Flow Policy</h1>
+<h3 align="center">Simplifying diffusion/flow-matching policies by treating<br> <i>action trajectories as flow trajectories</i></h3>
+<h4 align="center"><a href="https://streaming-flow-policy.github.io/">🌐 Website</a>  &nbsp;•&nbsp;  <a href=https://arxiv.org/abs/2505.21851>📄 Paper</a> &nbsp;•&nbsp; <a href="https://youtu.be/gqUnEzBCbZE">🎬 Talk</a> &nbsp;•&nbsp; <a href=https://x.com/siddancha/status/1925170490856833180>🐦 Twitter</a> &nbsp;•&nbsp; <a href=https://siddancha.github.io/streaming-flow-policy/notebooks>📚 Notebooks</a></h4>
+<div align="center" style="margin: 0px; padding: 0px">
+      <img style="width: 90%; min-width: 500px" src="https://github.com/user-attachments/assets/2b7a02c5-585e-40d4-9c5c-95a1948aa9d0"></img>
+</div>
 
-## Installation
+## 🛠️ Installation
 
 1. Create a virtual environment
     ```bash
@@ -22,13 +27,13 @@
     pip install uv
     ```
 
-3. Sync dependencies using uv:
+3. Sync Python dependencies using uv:
     ```bash
     uv sync
     ```
 
 
-## Building Jupyter Book
+## 📚 Building Jupyter Book
 
 The Jupyter Book is built using [jupyter-book](https://jupyterbook.org/intro.html). It lives in the `docs/` directory.
 
@@ -49,10 +54,3 @@ Add a symlink to the `docs` directory.
 #### View Jupyter book locally
 
 The HTML content is created in the `docs/_build/html` directory.
-
-#### To deploy to MIT website
-
-```bash
-scp -r docs/_build/html/* $WEBSITE_HOME/notebooks/
-```
-where `$WEBSITE_HOME` is `sancha@athena.dialup.mit.edu:/afs/athena.mit.edu/user/s/a/sancha/www`.
