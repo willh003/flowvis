@@ -10,6 +10,7 @@ dependencies = [
     # =========================================================================
     # Debugging, interactive Python and Jupyter notebooks
     # =========================================================================
+    "numpy < 2.0",
     "ipdb",
     "ipykernel",
     "ipywidgets",
@@ -22,6 +23,7 @@ dependencies = [
     # Main dependencies
     # =========================================================================
     "mediapy",
+    
     "opencv-python",
     "drake",
     "matplotlib",
