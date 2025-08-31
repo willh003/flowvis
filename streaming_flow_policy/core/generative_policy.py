@@ -66,8 +66,8 @@ class TrajectoryDataset(Dataset):
             actions = states[:, 1:] - states[:, :-1]
             states = states[:, :-1]
 
-            all_states.append(torch.from_numpy(states, dtype=torch.float32))
-            all_actions.append(torch.from_numpy(actions, dtype=torch.float32))
+            all_states.append(torch.from_numpy(states))
+            all_actions.append(torch.from_numpy(actions))
 
         all_states, all_actions = torch.cat(all_states, dim=0), torch.cat(all_actions, dim=0)
 
@@ -95,6 +95,8 @@ class GenerativePolicy(ABC):
 
 
 
+
+
 class ConditionalFlow:
 
     def __init__(self, cond_dim: int, q_dim: int):
@@ -117,7 +119,7 @@ class ConditionalFlow:
         return Uniform(low, high)
 
     def make_nets(self, cond_dim: int, q_dim: int) -> nn.Module:
-        return ConditionalUnet1D(q_dim, cond_dim, diffusion_step_embed_dim=32, down_dims=[32,64]).to(self.device)
+        return ConditionalUnet1D(q_dim, cond_dim, diffusion_step_embed_dim=256, down_dims=[256,512,1024]).to(self.device)
 
     def forward_train(self, states: Tensor, actions: Tensor) -> Tensor:
 
@@ -165,3 +167,95 @@ class ConditionalFlow:
     def get_velocity(self, x: Tensor, time: Tensor, global_cond: Tensor) -> Tensor:
         return self.velocity_field(x, time, global_cond)
 
+
+
+class ConditionalDiffusion:
+
+    def __init__(self, cond_dim: int, q_dim: int):
+        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
+        self.cond_dim = cond_dim
+        self.q_dim = q_dim
+        self.loss_fn = nn.MSELoss()
+        self.epsilon_net = self.make_nets(cond_dim, q_dim)
+
+        # Diffusion parameters - ensure all are float32
+        self.num_timesteps = 1000
+        self.beta_start = 1e-4
+        self.beta_end = 0.02
+        self.betas = torch.linspace(self.beta_start, self.beta_end, self.num_timesteps, dtype=torch.float32).to(self.device)
+        self.alphas = (1.0 - self.betas)
+        self.alphas_cumprod = torch.cumprod(self.alphas, dim=0)
+        self.sqrt_alphas_cumprod = torch.sqrt(self.alphas_cumprod)
+        self.sqrt_one_minus_alphas_cumprod = torch.sqrt(1.0 - self.alphas_cumprod)
+
+    @property
+    def nets(self) -> nn.Module:
+        return self.epsilon_net
+
+
+    def make_nets(self, cond_dim: int, q_dim: int) -> nn.Module:
+        return ConditionalUnet1D(q_dim, cond_dim, diffusion_step_embed_dim=256, down_dims=[256,512,1024]).to(self.device)
+
+    def forward_train(self, states: Tensor, actions: Tensor) -> Tensor:
+        global_cond = states.to(self.device)
+        posterior_samples = actions.to(self.device)
+
+        batch_size, chunk_size, posterior_dim = posterior_samples.shape
+        self.chunk_size = chunk_size
+
+        # Sample random timesteps
+        t = torch.randint(0, self.num_timesteps, (batch_size,), device=self.device).long()
+        
+        # Add noise to the posterior samples
+        noise = torch.randn_like(posterior_samples, device=self.device)
+        sqrt_alphas_cumprod_t = self.sqrt_alphas_cumprod[t].view(batch_size, 1, 1)
+        sqrt_one_minus_alphas_cumprod_t = self.sqrt_one_minus_alphas_cumprod[t].view(batch_size, 1, 1)
+        
+        noisy_samples = sqrt_alphas_cumprod_t * posterior_samples + sqrt_one_minus_alphas_cumprod_t * noise
+
+        # Predict the noise - match Flow model dtypes (float64 for sample and time, float32 for cond)
+        steps_for_train = t.double() / self.num_timesteps
+        noisy_samples = noisy_samples.double()
+        noise = noise.double()  # Convert noise to double for loss computation
+
+        predicted_noise = self.epsilon_net(noisy_samples, steps_for_train, global_cond)
+        
+        # Compute loss
+        loss = self.loss_fn(predicted_noise, noise)
+        
+        return loss
+
+
+    def forward_inference(self, global_cond: Tensor, num_inference_steps: int = 100) -> Tensor:
+        batch_size = global_cond.shape[0]
+        
+        # Start from pure noise
+        x = torch.randn(batch_size, self.chunk_size, self.q_dim, device=self.device)
+        global_cond = global_cond.to(self.device)
+        
+        # Use fewer timesteps for inference
+        timesteps = torch.linspace(self.num_timesteps - 1, 0, num_inference_steps, device=self.device).long()
+        
+        # Reverse diffusion process
+        with torch.no_grad():
+            for i, timestep in enumerate(timesteps):
+                t = torch.full((batch_size,), timestep, device=self.device)
+                
+                # Predict noise
+                predicted_noise = self.epsilon_net(x.double(), t.double() / self.num_timesteps, global_cond)
+                
+                # Denoise step
+                alpha_t = self.alphas[timestep]
+                alpha_t_cumprod = self.alphas_cumprod[timestep]
+                beta_t = self.betas[timestep]
+                
+                if timestep > 0:
+                    noise = torch.randn_like(x, device=self.device)
+                else:
+                    noise = torch.zeros_like(x, device=self.device)
+                
+                # DDPM denoising equation
+                x = (1 / torch.sqrt(alpha_t)) * (x - (beta_t / torch.sqrt(1 - alpha_t_cumprod)) * predicted_noise) + torch.sqrt(beta_t) * noise
+        
+        return x
